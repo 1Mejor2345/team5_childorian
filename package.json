@@ -1,0 +1,9 @@
+{
+  "name": "nexo-universidad-trabajo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Aprendizaje aplicado para conectar la universidad con el trabajo",
+  "scripts": { "start": "node server.mjs", "test": "node --test tests/*.test.mjs", "check": "node --check server.mjs && node --check public/app.js && node --check public/domain.js" },
+  "engines": { "node": ">=22" }
+}
