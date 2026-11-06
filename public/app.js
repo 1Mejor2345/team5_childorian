@@ -164,11 +164,87 @@ function home(){
 
   </div>`;
 }
-function plan(){const plan=makePlan(state);return `${head('UN CAMINO QUE SE ADAPTA A TI','Tu futuro, paso a paso.','Una ruta corta para convertir tus puntos débiles en habilidades que puedes demostrar.',btn(state.diagnostic?'Repetir diagnóstico':'Personalizar mi ruta','diagnostic','outline'))}<section class="plan-banner"><div>${icon('route')}<span><strong>${state.diagnostic?'Tu diagnóstico marcó el camino.':'Primero, conozcamos tu punto de partida.'}</strong><p>${state.diagnostic?'Las habilidades con menor puntuación aparecen primero. El diagnóstico es orientativo, no una certificación.':'Completa cinco preguntas para ordenar tu plan según lo que necesitas reforzar.'}</p></span></div><span class="pill">${state.minutes} MIN / SESIÓN</span></section><div class="plan-layout"><section class="timeline">${plan.map((m,i)=>`<article class="timeline-item ${m.done?'done':''}"><div class="node">${m.done?icon('check'):String(i+1).padStart(2,'0')}</div><div class="timeline-content"><div class="meta">SESIÓN ${i+1} <span>·</span> ${m.day} sugerido <span>·</span> ${Math.ceil(m.time/state.minutes)} bloque(s) de hasta ${state.minutes} min</div><h2>${m.title}</h2><p>${m.desc}</p><span class="tag ${m.color}">${m.method}</span></div>${btn(m.done?'Repasar':`Comenzar ${icon('arrow')}`,`module:${m.id}`,m.done?'outline':'primary')}</article>`).join('')}</section><aside class="paper-note"><span class="eyebrow">TU ACUERDO CONTIGO</span><h3>La constancia gana<br>a la perfección.</h3><p>No necesitas saberlo todo hoy. Reserva un momento, practica y vuelve a intentarlo.</p><label for="minutes">Tiempo por sesión</label><select id="minutes"><option value="10" ${state.minutes===10?'selected':''}>10 minutos</option><option value="20" ${state.minutes===20?'selected':''}>20 minutos</option><option value="30" ${state.minutes===30?'selected':''}>30 minutos</option></select><button class="text-link" data-action="export-plan">${icon('download')} Descargar mi plan</button></aside></div>`;}
+function plan(){
+  const plan = makePlan(state);
+  return `${head('UN CAMINO QUE SE ADAPTA A TI', 'Tu futuro, paso a paso.', 'Una ruta corta para convertir tus puntos débiles en habilidades que puedes demostrar.')}
+  
+  <div class="plan-layout">
+    <section class="timeline">
+      ${plan.map((m, i) => `
+        <article class="timeline-item ${m.done ? 'done' : ''}">
+          <div class="node">${m.done ? icon('check') : String(i + 1).padStart(2, '0')}</div>
+          <div class="timeline-content">
+            <div class="meta">SESIÓN ${i + 1} <span>·</span> ${m.day} sugerido <span>·</span> ${Math.ceil(m.time / state.minutes)} bloque(s) de hasta ${state.minutes} min</div>
+            <h2>${m.title}</h2>
+            <p>${m.desc}</p>
+            <span class="tag ${m.color}">${m.method}</span>
+          </div>
+          ${btn(m.done ? 'Repasar' : `Comenzar ${icon('arrow')}`, `module:${m.id}`, m.done ? 'outline' : 'primary')}
+        </article>
+      `).join('')}
+    </section>
+    
+    <aside class="paper-note">
+      <span class="eyebrow">TU ACUERDO CONTIGO</span>
+      <h3>La constancia gana<br>a la perfección.</h3>
+      <p>No necesitas saberlo todo hoy. Reserva un momento, practica y vuelve a intentarlo.</p>
+      <label for="minutes">Tiempo por sesión</label>
+      <select id="minutes">
+        <option value="10" ${state.minutes === 10 ? 'selected' : ''}>10 minutos</option>
+        <option value="20" ${state.minutes === 20 ? 'selected' : ''}>20 minutos</option>
+        <option value="30" ${state.minutes === 30 ? 'selected' : ''}>30 minutos</option>
+      </select>
+      <button class="text-link" data-action="export-plan">${icon('download')} Descargar mi plan</button>
+    </aside>
+  </div>`;
+}
+
 function challenges(){return `${head('LA TEORÍA SE ENCUENTRA CON LA PRÁCTICA','Pequeños retos. Habilidades reales.','Practica decisiones que podrías enfrentar en tu primer empleo, sin salir de un entorno de aprendizaje.')}<div class="challenge-grid">${modules.map((m,i)=>`<article class="challenge-card"><div class="challenge-visual ${m.color}">${icon(m.icon)}<span>0${i+1}</span><div class="visual-grid"></div></div><div class="challenge-body"><span class="eyebrow">${m.tag}</span><h2>${m.title}</h2><p>${m.desc}</p><div class="meta">${icon('clock')} ${m.time} min <span>·</span> +50 XP ${state.completed[m.id]?'<span class="success-text">Completado</span>':''}</div>${btn(`${state.completed[m.id]?'Volver a practicar':'Aceptar el reto'} ${icon('arrow')}`,`module:${m.id}`,'outline')}</div></article>`).join('')}</div>`;}
 function trafficLabel(level){return {red:'Rojo · Detente y consulta',amber:'Amarillo · Pendiente de contrastar',green:'Verde · Revisión registrada por ti'}[level]||'Amarillo · Pendiente de contrastar';}
 function chat(){return `${head('PREGUNTAR TAMBIÉN ES AVANZAR','Hola, soy tu Mentor Sync.','Un espacio para explorar ideas y practicar cómo llevarlas al mundo real.')}<div class="chat-layout"><section class="chat-panel"><div class="chat-header"><span class="mentor-symbol">${icon('spark')}</span><span><strong>Mentor Sync</strong><small>Demo interactiva · Respuestas prediseñadas</small></span><button class="text-link" data-action="clear-chat">Limpiar chat</button></div><div class="chat-messages" id="messages" role="log" aria-label="Conversación simulada"><div class="message assistant"><span class="chat-avatar">n</span><div class="bubble"><strong>Tu siguiente pregunta puede ser el comienzo.</strong><p>¿Qué te gustaría entender, practicar o aplicar hoy? Podemos preparar una entrevista, revisar una idea de la IA o construir un método de estudio.</p><small>Prototipo: esta conversación no utiliza IA real.</small></div></div>${state.messages.map((m,i)=>`<div class="message ${m.role}">${m.role==='assistant'?'<span class="chat-avatar">n</span>':''}<div class="bubble"><p>${esc(m.text).replace(/\n/g,'<br>')}</p>${m.role==='assistant'?`<div class="response-status ${m.level}"><i class="dot ${m.level}"></i>${trafficLabel(m.level)}</div>${m.review?`<small class="review-note">Tu evidencia: ${esc(m.review)}</small>`:m.level==='amber'?`<button class="text-link" data-action="verify:${i}">Registrar mi revisión ${icon('arrow')}</button>`:''}`:''}</div></div>`).join('')}${chatBusy?'<div class="typing" role="status">Preparando una respuesta de demostración…</div>':''}</div><div class="chat-suggestions">${['¿Cómo verifico una respuesta de IA?','Quiero preparar una entrevista','¿Cómo estudio mejor?'].map(s=>`<button data-prompt="${s}">${s}</button>`).join('')}</div><form id="chat-form" class="chat-form"><label class="sr-only" for="chat-input">Tu pregunta</label><textarea id="chat-input" name="message" rows="1" maxlength="2000" placeholder="Escribe tu pregunta. Hagamos que avance." required ${chatBusy?'disabled':''}></textarea><button class="send" aria-label="Enviar pregunta" ${chatBusy?'disabled':''}>${icon('arrow')}</button></form><div class="chat-disclaimer">${icon('shield')} La demo orienta el aprendizaje. No valida decisiones profesionales.</div></section><aside><article class="paper-note"><span class="eyebrow">HAZ MEJORES PREGUNTAS</span><h3>Dale contexto<br>a tu curiosidad.</h3><ol><li>¿Qué estás aprendiendo?</li><li>¿Dónde lo usarías?</li><li>¿Qué has intentado?</li><li>¿Cómo lo comprobarías?</li></ol></article><article class="chat-traffic"><h3>Una brújula, no una garantía.</h3><p>El semáforo te ayuda a detenerte y contrastar. El verde registra tu revisión; no certifica que la respuesta sea correcta.</p><button class="text-link" data-action="traffic">Ver cómo funciona ${icon('arrow')}</button></article></aside></div>`;}
-function progress(){return `${head('CADA PASO CUENTA','Mira todo lo que vas construyendo.','Tu progreso es más que una cifra: es lo que puedes explicar, comprobar y aplicar.',btn(`${icon('download')} Exportar evidencias`,'export-evidence','outline'))}<div class="progress-stats"><article><span>RETOS COMPLETADOS</span><strong>${count()}<small> / 4</small></strong><p>Con evidencia de aprendizaje</p></article><article><span>EXPERIENCIA GANADA</span><strong>${count()*50}<small> XP</small></strong><p>${count()===4?'Ruta explorada':'Cada reto suma 50 XP'}</p></article><article><span>DÍAS DE PRÁCTICA</span><strong>${state.visits.length}</strong><p>Visitas registradas en este navegador</p></article></div><div class="progress-grid"><section class="white-card"><h2>Tu punto de partida</h2><p>Resultados de tu último diagnóstico. Miden estas preguntas, no tu capacidad profesional.</p>${state.diagnostic?skills.map((s,i)=>`<div class="skill-row"><div><strong>${s}</strong><span>${state.diagnostic.scores[i]}%</span></div><div class="bar"><span style="width:${state.diagnostic.scores[i]}%"></span></div></div>`).join(''):`<div class="empty-state">${icon('chart')}<h3>Primero, conozcamos tu punto de partida.</h3><p>Responde cinco preguntas y descubre qué practicar.</p>${btn('Hacer diagnóstico','diagnostic')}</div>`}</section><section class="white-card"><h2>Tu portafolio empieza aquí</h2><p>Ideas que ya puedes explicar y decisiones que puedes justificar.</p>${state.evidence.length?state.evidence.map(e=>`<article class="evidence"><span class="success-text">${icon('check')} ${esc(e.title)}</span><p>${esc(e.text)}</p><small>${esc(e.date)}</small></article>`).join(''):`<div class="empty-state">${icon('briefcase')}<h3>Tu primera evidencia te espera.</h3><p>Completa un reto y guarda una reflexión aplicada.</p>${btn('Explorar retos','go-challenges','outline')}</div>`}</section></div>`;}
+function progress(){
+  return `${head('CADA PASO CUENTA', 'Mira todo lo que vas construyendo.', 'Tu progreso es más que una cifra: es lo que puedes explicar, comprobar y aplicar.', btn(`${icon('download')} Exportar evidencias`, 'export-evidence', 'outline'))}
+  
+  <div class="progress-stats">
+    <article>
+      <span>RETOS COMPLETADOS</span>
+      <strong>${count()}<small> / 4</small></strong>
+      <p>Con evidencia de aprendizaje</p>
+    </article>
+    <article>
+      <span>EXPERIENCIA GANADA</span>
+      <strong>${count()*50}<small> XP</small></strong>
+      <p>${count()===4 ? 'Ruta explorada' : 'Cada reto suma 50 XP'}</p>
+    </article>
+    <article>
+      <span>DÍAS DE PRÁCTICA</span>
+      <strong>${state.visits.length}</strong>
+      <p>Visitas registradas en este navegador</p>
+    </article>
+  </div>
+  
+  <div class="progress-grid" style="grid-template-columns: 1fr;">
+    <section class="white-card">
+      <h2>Tu portafolio empieza aquí</h2>
+      <p>Ideas que ya puedes explicar y decisiones que puedes justificar.</p>
+      
+      ${state.evidence.length ? state.evidence.map(e => `
+        <article class="evidence">
+          <span class="success-text">${icon('check')} ${esc(e.title)}</span>
+          <p>${esc(e.text)}</p>
+          <small>${esc(e.date)}</small>
+        </article>
+      `).join('') : `
+        <div class="empty-state">
+          ${icon('briefcase')}
+          <h3>Tu primera evidencia te espera.</h3>
+          <p>Completa un reto y guarda una reflexión aplicada.</p>
+          ${btn('Explorar retos', 'go-challenges', 'outline')}
+        </div>
+      `}
+    </section>
+  </div>`;
+}
 const methods={feynman:{title:'Explícalo para entenderlo',name:'Método Feynman',icon:'message',color:'orange',steps:['Elige un concepto de tu carrera.','Explícalo con palabras que usaría alguien fuera de tu especialidad.','Detecta dónde te trabas y vuelve a la fuente.','Reescribe la explicación con un ejemplo del trabajo.'],prompt:'Explica un concepto de tu carrera en cuatro frases. ¿Dónde lo aplicarías?'},recall:{title:'Recuerda sin mirar',name:'Recuperación activa',icon:'book',color:'violet',steps:['Cierra los apuntes y escribe tres preguntas.','Intenta responderlas sin ayuda.','Contrasta tus respuestas con el material del curso.','Corrige un error y vuelve a responder en otra sesión.'],prompt:'Escribe tres preguntas sobre el tema que estás estudiando y responde una de memoria.'},spaced:{title:'Dale tiempo a lo aprendido',name:'Repaso espaciado',icon:'clock',color:'green',steps:['Practica un concepto hoy.','Vuelve a recuperarlo mañana sin apuntes.','Repásalo en tres días y luego en una semana.','Acorta el intervalo si hay errores. Estos intervalos son una sugerencia.'],prompt:'¿Qué tema repasarás y en qué tres fechas volverás a practicarlo?'},cases:{title:'Piensa en un caso real',name:'Aprendizaje basado en problemas',icon:'briefcase',color:'blue',steps:['Describe una situación del trabajo.','Separa hechos, supuestos y datos faltantes.','Propón una solución y una prueba de bajo riesgo.','Explica cómo sabrás si funcionó.'],prompt:'Describe un problema, una hipótesis y cómo medirías el resultado.'}};
 function library(){return `${head('APRENDER MEJOR ES UNA HABILIDAD','Encuentra tu forma de aprender.','Cuatro herramientas sencillas para complementar lo que te enseña la universidad.')}<div class="challenge-grid">${Object.entries(methods).map(([id,m])=>`<article class="method-large white-card"><span class="method-icon ${m.color}">${icon(m.icon)}</span><span class="eyebrow">${m.name}</span><h2>${m.title}</h2><p>${m.steps[0]} ${m.steps[1]}</p>${btn(`Practicar método ${icon('arrow')}`,`method:${id}`,'outline')}</article>`).join('')}</div>`;}
 const views={home,plan,challenges,chat,progress,library};
