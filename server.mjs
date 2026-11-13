@@ -2,15 +2,25 @@ import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { demoReply } from './public/domain.js';
-const assets = new Map([['/','index.html'],['/index.html','index.html'],['/styles.css','styles.css'],['/app.js','app.js'],['/domain.js','domain.js'],['/favicon.svg','favicon.svg']]);
-const mime={html:'text/html; charset=utf-8',css:'text/css; charset=utf-8',js:'text/javascript; charset=utf-8',svg:'image/svg+xml'};
+const assets = new Map([
+  ['/', 'index.html'],
+  ['/index.html', 'index.html'],
+  ['/styles.css', 'styles.css'],
+  ['/app.js', 'app.js'],
+  ['/domain.js', 'domain.js'],
+  ['/favicon.svg', 'favicon.svg'],
+  ['/img/Espol.png', '../img/Espol.png'], 
+  ['/img/UMayor.png', '../img/UMayor.png'],
+  ['/img/I3Lab.png', '../img/I3Lab.png']
+]);
+const mime={html:'text/html; charset=utf-8',css:'text/css; charset=utf-8',js:'text/javascript; charset=utf-8',svg:'image/svg+xml',png:'image/png'};
 const buckets=new Map();
 const json=(res,status,body)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(body));};
 export function createServer() {
  return http.createServer(async(req,res)=>{
   res.setHeader('X-Content-Type-Options','nosniff');
   res.setHeader('Referrer-Policy','same-origin');
-  res.setHeader('Content-Security-Policy',"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+  res.setHeader('Content-Security-Policy',"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
   const path=new URL(req.url,'http://localhost').pathname;
   if(path==='/health')return json(res,200,{status:'ok'});
   if(path==='/api/config'&&req.method==='GET')return json(res,200,{mode:'demo'});
