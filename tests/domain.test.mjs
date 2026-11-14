@@ -29,5 +29,13 @@ test('HTTP sirve la aplicación, valida entradas, simula chat y protege archivos
   assert.equal(res.status,200);const body=await res.json();assert.equal(body.mode,'demo');assert.equal(body.level,'amber');assert.match(body.text,/fuente primaria/);
   res=await fetch(`${base}/api/chat`,{method:'POST',body:JSON.stringify({message:'a'.repeat(2100)})});assert.equal(res.status,400);
   for(let i=0;i<20;i++)res=await fetch(`${base}/api/chat`,{method:'POST',body:JSON.stringify({message:'hola'})});assert.equal(res.status,429);
+  res=await fetch(`${base}/api/store`,{method:'POST',body:JSON.stringify({action:'register',name:'Jorge',university:'ESPOL',career:'Ingeniería Mecatrónica',password:'miClave123',aiProfile:{summary:'Ejecutor Técnico'}})});
+  assert.equal(res.status,200);
+  res=await fetch(`${base}/api/store`,{method:'POST',body:JSON.stringify({action:'login',name:'Jorge',password:'miClave123'})});
+  assert.equal(res.status,200);
+  res=await fetch(`${base}/api/store`,{method:'POST',body:JSON.stringify({action:'guest',name:'Visitante',career:'Ingeniería Mecatrónica'})});
+  assert.equal(res.status,200);
+  res=await fetch(`${base}/api/store?user=Jorge`);
+  assert.equal(res.status,200);const storeBody=await res.json();assert.equal(storeBody.user.name,'Jorge');
  }finally{await new Promise(r=>server.close(r));}
 });
