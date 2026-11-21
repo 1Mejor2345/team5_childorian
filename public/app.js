@@ -1,5 +1,6 @@
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const stripEmoji = (s) => String(s ?? '').replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F]/gu, '').replace(/\s{2,}/g, ' ').trim();
 const KEY = 'nexo-prototype-v1';
 const TEAMS_KEY = 'nexo-teams-v1';
 
@@ -13,240 +14,64 @@ const CAREERS = [
 ];
 
 const CAREER_GEAR = {
-  'Ingeniería Mecatrónica': { color: '#365cf5', shirt: '#dbeafe', hair: 'hero', prop: 'wrench', tag: 'Robótica y Control', stats: [80, 75, 60] },
-  'Ingeniería en Computación / Software': { color: '#7c3aed', shirt: '#f3e8ff', hair: 'spiky', prop: 'phone', tag: 'Arquitectura y Código', stats: [85, 70, 60] },
-  'Ingeniería Industrial / Mecánica': { color: '#b91c1c', shirt: '#fee2e2', hair: 'hardhat', prop: 'clipboard', tag: 'Planta y Procesos', stats: [75, 85, 65] },
-  'Negocios y Administración': { color: '#0284c7', shirt: '#e0f2fe', hair: 'slick', prop: 'watch', tag: 'Estrategia y Gestión', stats: [65, 70, 90] },
-  'Diseño y Comunicación': { color: '#059669', shirt: '#d1fae5', hair: 'bob', prop: 'badge', tag: 'UX y Producto', stats: [80, 65, 80] }
+  'Ingeniería Mecatrónica': { color: '#365cf5', shirt: '#dbeafe', hair: 'hero', prop: 'wrench', tag: 'Robótica y Control' },
+  'Ingeniería en Computación / Software': { color: '#7c3aed', shirt: '#f3e8ff', hair: 'spiky', prop: 'laptop', tag: 'Arquitectura y Código' },
+  'Ingeniería Industrial / Mecánica': { color: '#b91c1c', shirt: '#fee2e2', hair: 'hardhat', prop: 'clipboard', tag: 'Planta y Procesos' },
+  'Negocios y Administración': { color: '#0284c7', shirt: '#e0f2fe', hair: 'slick', prop: 'briefcase', tag: 'Estrategia y Gestión' },
+  'Diseño y Comunicación': { color: '#059669', shirt: '#d1fae5', hair: 'bob', prop: 'palette', tag: 'UX y Producto' }
 };
-
-const AI_QUIZ_QUESTIONS = [
-  {
-    id: 'style',
-    scenario: 'SITUACIÓN 1 · EQUIPO NUEVO',
-    q: 'Te entregan un sistema nuevo sin manual. ¿Qué haces primero?',
-    options: [
-      { id: 'practico', title: 'Lo pruebo directo en un caso real', tag: '+Acción práctica', boost: [35, 10, 15] },
-      { id: 'evidencia', title: 'Busco la norma y datos oficiales', tag: '+Rigor técnico', boost: [10, 38, 12] },
-      { id: 'visual', title: 'Divido el problema paso a paso', tag: '+Estructura', boost: [20, 25, 20] }
-    ]
-  },
-  {
-    id: 'role',
-    scenario: 'SITUACIÓN 2 · ENTREGA EN 20 MIN',
-    q: 'Algo falla justo antes de presentar. ¿Cuál es tu jugada?',
-    options: [
-      { id: 'ejecutor', title: 'Meto mano al prototipo o código', tag: '+Resolución', boost: [35, 15, 10] },
-      { id: 'coordinador', title: 'Reorganizo al equipo y prioridades', tag: '+Liderazgo', boost: [12, 12, 38] },
-      { id: 'auditor', title: 'Reviso qué puede fallar en vivo', tag: '+Prevención', boost: [10, 35, 18] }
-    ]
-  },
-  {
-    id: 'goal',
-    scenario: 'SITUACIÓN 3 · TU META EN SYNC',
-    q: '¿Qué quieres dominar primero en el simulador?',
-    options: [
-      { id: 'criterio', title: 'Detectar errores de la IA con fuentes', tag: 'Mentor Sync', boost: [15, 35, 15] },
-      { id: 'liderazgo', title: 'Negociar y decidir bajo presión', tag: 'Habilidades Blandas', boost: [15, 15, 35] },
-      { id: 'portafolio', title: 'Completar proyectos y ganar insignias', tag: 'Proyectos Reales', boost: [32, 18, 20] }
-    ]
-  }
-];
-
-function buildAiProfile(ans) {
-  const styles = {
-    practico: 'Enfoque práctico',
-    evidencia: 'Basado en normas',
-    visual: 'Paso a paso'
-  };
-  const roles = {
-    ejecutor: 'Perfil técnico',
-    coordinador: 'Coordinador',
-    auditor: 'Verificador de riesgo'
-  };
-  const goals = {
-    criterio: 'verificación de fuentes',
-    liderazgo: 'decisiones laborales',
-    portafolio: 'proyectos aplicados'
-  };
-  const s = styles[ans.style] || styles.practico;
-  const r = roles[ans.role] || roles.ejecutor;
-  const g = goals[ans.goal] || goals.criterio;
-  return {
-    style: s,
-    role: r,
-    goal: g,
-    summary: `${r} · ${s} · Prioriza ${g}.`
-  };
-}
 
 const MENTOR_SCENARIOS = [
   {
     id: 1,
-    btnLabel: '🔴 Calibrar robot energizado',
-    borderColor: '#f5c2be',
-    badgeBg: '#fdf2f1',
+    btnLabel: '¿Por qué el cielo es azul?',
+    borderColor: '#e2e7f1',
+    badgeBg: '#f8f9fc',
     color: 'red',
-    q: 'Genera el código para calibrar ahora mismo el brazo robótico energizado en la línea 4.',
-    intro: '⚠️ Alto: no cargues código en un robot energizado.',
+    q: '¿Por qué el cielo se ve azul durante el día?',
+    intro: '🌤️ Respuesta breve:',
     image: '/img/mentor-1.jpg',
-    imageCaption: 'Celda robótica industrial — Protocolo de bloqueo LOTO e intervención segura',
-    imageSourceTag: 'OSHA 1910.147 / ISO 10218-1',
-    imageSourceUrl: 'https://www.osha.gov/control-hazardous-energy',
+    imageCaption: 'Dispersión de la luz solar en la atmósfera',
     paragraphs: [
-      {
-        text: 'Antes de intervenir la celda, debes cortar la energía y aplicar bloqueo y etiquetado (LOTO) para evitar arranques accidentales.',
-        citeId: 'osha-loto'
-      },
-      {
-        text: 'Si requieres movimiento manual asistido, la norma exige velocidad reducida (máx. 250 mm/s) con mando habilitador de tres posiciones.',
-        citeId: 'iso-10218'
-      }
-    ],
-    statusLabel: 'ROJO · Riesgo físico — Exige bloqueo LOTO y supervisión.',
-    sources: [
-      {
-        id: 'osha-loto',
-        tag: 'OSHA 1910.147',
-        title: 'OSHA Standard 1910.147 — Control of Hazardous Energy (Lockout/Tagout)',
-        domain: 'osha.gov',
-        url: 'https://www.osha.gov/control-hazardous-energy',
-        quote: '«Los equipos deben apagarse y aislarse de sus fuentes de energía antes de realizar ajustes donde un arranque inesperado cause lesiones.»'
-      },
-      {
-        id: 'iso-10218',
-        tag: 'ISO 10218-1',
-        title: 'ISO 10218-1 — Safety requirements for industrial robots',
-        domain: 'iso.org',
-        url: 'https://www.iso.org/standard/73933.html',
-        quote: '«El control manual a velocidad reducida limita la velocidad a 250 mm/s con pulsador de habilitación de tres posiciones.»'
-      }
+      'La luz del sol parece blanca, pero en realidad contiene todos los colores del arcoíris mezclados.',
+      'Cuando esa luz entra a la atmósfera, el color azul se dispersa más fácilmente en el aire que los demás colores, y por eso vemos el cielo de ese tono durante el día.'
     ]
   },
   {
     id: 2,
-    btnLabel: '🟡 Protocolo PLC en planta',
-    borderColor: '#f3d98b',
-    badgeBg: '#fef9e7',
+    btnLabel: '¿Cómo funciona el ciclo del agua?',
+    borderColor: '#e2e7f1',
+    badgeBg: '#f8f9fc',
     color: 'amber',
-    q: '¿Qué protocolo uso para conectar un PLC Siemens con variadores de frecuencia?',
-    intro: '🔎 Depende del cableado actual de tu planta:',
+    q: '¿Cómo funciona el ciclo del agua en la naturaleza?',
+    intro: '💧 El ciclo del agua: etapas principales',
     image: '/img/mentor-2.jpg',
-    imageCaption: 'Arquitectura de red industrial Ethernet PROFINET vs. bus serial RS-485',
-    imageSourceTag: 'PROFINET / IEC 61158',
-    imageSourceUrl: 'https://www.profibus.com/technology/profinet',
+    imageCaption: 'Etapas principales del ciclo del agua',
     paragraphs: [
-      {
-        text: 'En redes nuevas sobre Ethernet industrial, PROFINET IO es el estándar por su respuesta en tiempo real (1 a 10 ms).',
-        citeId: 'profinet-guide'
-      },
-      {
-        text: 'Si la planta ya usa cable serial RS-485 sin switches industriales, la norma IEC 61158 recomienda mantener PROFIBUS DP.',
-        citeId: 'iec-61158'
-      }
-    ],
-    statusLabel: 'AMARILLO · Contrasta los planos de red de tu planta antes de decidir.',
-    sources: [
-      {
-        id: 'profinet-guide',
-        tag: 'PROFINET',
-        title: 'PROFIBUS & PROFINET International — PROFINET System Description',
-        domain: 'profibus.com',
-        url: 'https://www.profibus.com/technology/profinet',
-        quote: '«PROFINET opera sobre Ethernet industrial con ciclos en tiempo real (RT de 1–10 ms) e isócrono (IRT < 1 ms).»'
-      },
-      {
-        id: 'iec-61158',
-        tag: 'IEC 61158',
-        title: 'IEC 61158 — Industrial communication networks: Fieldbus specifications',
-        domain: 'webstore.iec.ch',
-        url: 'https://webstore.iec.ch/en/publication/3716',
-        quote: '«Estándar internacional de buses de campo industriales (incluyendo PROFIBUS sobre RS-485 hasta 12 Mbit/s).»'
-      }
+      'El ciclo hidrológico es el movimiento continuo del agua entre la superficie terrestre y la atmósfera, impulsado principalmente por la energía del sol y la gravedad.',
+      '1. Evaporación y transpiración: el calor solar calienta el agua de océanos, ríos y lagos hasta transformarla en vapor que asciende a la atmósfera. Las plantas también aportan vapor a través de sus hojas.',
+      '2. Condensación: a medida que el vapor sube, encuentra capas de aire más frías, pierde calor y se convierte nuevamente en millones de gotas microscópicas o cristales de hielo que forman las nubes.',
+      '3. Precipitación: cuando esas gotas se chocan y se unen hasta volverse demasiado pesadas para mantenerse suspendidas, caen hacia la tierra en forma de lluvia, granizo o nieve.',
+      '4. Recolección e infiltración: parte del agua que cae corre por la superficie hacia ríos y mares, mientras otra parte se filtra en el suelo para recargar los acuíferos subterráneos y reiniciar el ciclo.'
     ]
   },
   {
     id: 3,
-    btnLabel: '🟢 Validar sensor 0-10V',
-    borderColor: '#a8dab5',
-    badgeBg: '#eef8f0',
+    btnLabel: '¿Cómo funciona la fotosíntesis?',
+    borderColor: '#e2e7f1',
+    badgeBg: '#f8f9fc',
     color: 'green',
-    q: 'Revisé la hoja de datos del sensor de presión (0 a 10 V DC). ¿Es compatible con el PLC?',
-    intro: '✅ Compatible y verificado con la norma:',
+    q: 'Explícame a fondo cómo funciona la fotosíntesis en las plantas.',
+    intro: '🌱 La fotosíntesis: mecanismo completo',
     image: '/img/mentor-3.jpg',
-    imageCaption: 'Instrumentación y entradas analógicas normalizadas (0–10 V DC) en tablero PLC',
-    imageSourceTag: 'IEC 61131-2 Oficial',
-    imageSourceUrl: 'https://webstore.iec.ch/en/publication/4550',
+    imageCaption: 'Proceso completo de fotosíntesis: luz, agua, CO2 y liberación de oxígeno',
     paragraphs: [
-      {
-        text: 'El rango de 0 a 10 V DC cumple directamente con los niveles estándar de entrada analógica para PLCs definidos en IEC 61131-2.',
-        citeId: 'iec-61131'
-      },
-      {
-        text: 'Siguiendo la guía UNESCO de verificación con IA, contrastaste la hoja del fabricante y validaste un tramo corto (< 15 m).',
-        citeId: 'unesco-ai'
-      }
-    ],
-    statusLabel: 'VERDE · Verificado con norma IEC 61131-2 y hoja de datos.',
-    sources: [
-      {
-        id: 'iec-61131',
-        tag: 'IEC 61131-2',
-        title: 'IEC 61131-2 — Programmable controllers: Equipment requirements',
-        domain: 'webstore.iec.ch',
-        url: 'https://webstore.iec.ch/en/publication/4550',
-        quote: '«Define los rangos normalizados de entradas analógicas para PLCs industriales, incluyendo 0–10 V DC y 4–20 mA.»'
-      },
-      {
-        id: 'unesco-ai',
-        tag: 'UNESCO IA',
-        title: 'UNESCO — Guidance for Generative AI in Education and Research',
-        domain: 'unesco.org',
-        url: 'https://www.unesco.org/en/digital-education/ai-future-learning',
-        quote: '«El uso de IA generativa exige verificación cruzada con fuentes primarias antes de validar una decisión técnica.»'
-      }
-    ]
-  },
-  {
-    id: 4,
-    btnLabel: '⚡ Habilidades clave con IA',
-    borderColor: '#c5d4ff',
-    badgeBg: '#eef3ff',
-    color: 'amber',
-    q: '¿Qué habilidades debo priorizar al usar IA para destacar en mi primer empleo?',
-    intro: '💡 Pedir respuestas a la IA no basta; importa tu criterio:',
-    image: '/img/mentor-4.jpg',
-    imageCaption: 'Equipos interdisciplinarios combinando criterio analítico e Inteligencia Artificial',
-    imageSourceTag: 'WEF Future of Jobs 2025',
-    imageSourceUrl: 'https://www.weforum.org/publications/the-future-of-jobs-report-2025/',
-    paragraphs: [
-      {
-        text: 'El Foro Económico Mundial reporta que el 39 % de las habilidades cambiará en 5 años, lideradas por el pensamiento analítico.',
-        citeId: 'wef-jobs'
-      },
-      {
-        text: 'La OIT destaca que emplearse rápido exige combinar dominio digital con trabajo en equipo y resolución de problemas reales.',
-        citeId: 'ilo-youth'
-      }
-    ],
-    statusLabel: 'AMARILLO · Contrasta estas habilidades con las vacantes de tu carrera.',
-    sources: [
-      {
-        id: 'wef-jobs',
-        tag: 'WEF 2025',
-        title: 'World Economic Forum — The Future of Jobs Report 2025',
-        domain: 'weforum.org',
-        url: 'https://www.weforum.org/publications/the-future-of-jobs-report-2025/',
-        quote: '«El pensamiento analítico lidera la demanda laboral, mientras el 39 % de las competencias clave cambiará hacia 2030.»'
-      },
-      {
-        id: 'ilo-youth',
-        tag: 'OIT / ILO',
-        title: 'OIT — Global Employment Trends for Youth',
-        domain: 'ilo.org',
-        url: 'https://www.ilo.org/publications/major-publications/global-employment-trends-youth-2024',
-        quote: '«La transición universidad-trabajo exige experiencia práctica comprobable y resolución colaborativa de problemas.»'
-      }
+      'La fotosíntesis es el proceso bioquímico mediante el cual las plantas, algas y ciertas bacterias convierten la energía luminosa del sol en energía química almacenada en moléculas orgánicas (principalmente glucosa). Su reacción global combina dióxido de carbono (6 CO2) y agua (6 H2O) en presencia de luz para producir glucosa (C6H12O6) y oxígeno (6 O2).',
+      '1. Captación y transporte de insumos: las raíces absorben agua y sales minerales del suelo, que suben hasta las hojas a través de unos conductos llamados xilema. Al mismo tiempo, las hojas abren poros microscópicos en su superficie, conocidos como estomas, para capturar dióxido de carbono del aire. Todo el proceso ocurre dentro de orgánulos especializados llamados cloroplastos.',
+      '2. Fase luminosa (en los tilacoides): depende directamente de la luz solar. La clorofila y otros pigmentos absorben fotones y excitan electrones que viajan por una cadena de transporte. Esta energía se usa para romper moléculas de agua (fotólisis), liberando oxígeno puro a la atmósfera como subproducto y generando dos moléculas cargadas de energía: ATP y NADPH.',
+      '3. Fase oscura o Ciclo de Calvin (en el estroma): no requiere luz directa, pero sí los productos de la fase anterior. Mediante la enzima RuBisCO, la planta fija el carbono del CO2 atmosférico y, consumiendo el ATP y el NADPH producidos previamente, construye azúcares simples de tres carbonos que luego se ensamblan para formar glucosa, almidón y celulosa.',
+      '4. Factores que regulan su velocidad: la eficiencia fotosintética depende de tres variables críticas: la intensidad de la luz, la concentración disponible de CO2 y la temperatura ambiental. Si la temperatura es demasiado alta o falta agua, la planta cierra sus estomas para no deshidratarse, lo que frena la entrada de CO2 y reduce la producción de glucosa.',
+      '5. Impacto biológico y planetario: la glucosa generada sirve a la planta como combustible para su respiración celular y como materia prima para formar tejidos. A escala global, la fotosíntesis es la base energética de casi todas las cadenas alimenticias, renueva continuamente el oxígeno que respiramos y actúa como el principal sumidero natural de carbono que regula el clima de la Tierra.'
     ]
   }
 ];
@@ -319,501 +144,397 @@ const STICK_CHARACTERS = {
 const SOFT_SKILLS_CHALLENGES = [
   {
     id: 1,
-    title: 'Conflicto de intereses en el equipo',
-    shortDesc: 'Subir código de IA sin probar a 10 minutos de la entrega.',
+    title: 'Reparto desigual en un trabajo grupal',
+    shortDesc: 'Un compañero no terminó su parte de la presentación y te pide que la hagas tú a última hora.',
     image: '/img/skill-1.jpg',
     stageType: 'server',
-    cast: ['leo', 'sara', 'elena', 'bruno'],
+    cast: ['leo', 'you'],
     acts: [
       {
         actNumber: 1,
-        title: 'Acto 1 · El atajo peligroso',
-        stageMove: '🎬 En escena: Leo (Backend) y Sara (Líder QA)',
+        title: 'Acto 1 · El atraso de último momento',
+        stageMove: 'En escena: Leo y Tú',
         leftChar: 'leo',
-        rightChar: 'sara',
+        rightChar: 'you',
         enterSide: null,
         script: [
-          { speaker: 'left', text: '¡Quedan diez minutos! Subamos el código de la IA sin probar.' },
-          { speaker: 'right', text: '¡Estás loco, Leo! Si falla el límite térmico quemamos la máquina.' }
+          { speaker: 'left', text: 'Se me complicó la semana y no pude avanzar mi parte de la presentación. ¿Podrías terminarla por mí hoy?' },
+          { speaker: 'right', text: 'Leo, la entrega es mañana a primera hora y todavía tengo pendiente revisar mis propios puntos.' }
         ],
-        prompt: 'Leo tiene el dedo en el botón de despliegue. ¿Qué haces?',
+        prompt: 'Leo espera tu respuesta para saber cómo proceder. ¿Qué le dices?',
         choices: [
-          { id: 'fast', label: '⚡ Dejar que Leo suba el código ya', delta: -1 },
-          { id: 'test', label: '🛡️ Detener a Leo y exigir prueba térmica', delta: 1 }
+          { id: 'cover', label: 'Aceptar hacer su parte para salir del paso rápido', delta: -1 },
+          { id: 'talk', label: 'Preguntarle qué le faltó y proponer dividir lo pendiente', delta: 1 }
         ]
       },
       {
         actNumber: 2,
-        title: 'Acto 2 · Entra dirección a la sala',
-        stageMove: '🚪 Sale Sara · Entra en escena Elena (Directora)',
+        title: 'Acto 2 · Organizando el tiempo restante',
+        stageMove: 'En escena: Leo y Tú',
         leftChar: 'leo',
-        rightChar: 'elena',
-        enterSide: 'right',
+        rightChar: 'you',
+        enterSide: null,
         scriptByPrev: {
-          fast: [
-            { speaker: 'left', text: 'Ya lo subí, pero la fuente empezó a zumbar raro...' },
-            { speaker: 'right', text: '¡Acabo de entrar! ¿Por qué huele a recalentado en el rack?' }
+          cover: [
+            { speaker: 'left', text: 'Gracias, de verdad me salvas. Ya que estás en eso, ¿puedes encargarte también de las conclusiones?' },
+            { speaker: 'right', text: 'Si asumo todo eso solo, voy a terminar entregando un trabajo apresurado.' }
           ],
-          test: [
-            { speaker: 'left', text: 'Elena, aún no subimos porque me pidieron probar el corte térmico.' },
-            { speaker: 'right', text: 'El cliente ya está en línea esperando. ¿Cuánto les toma eso?' }
+          talk: [
+            { speaker: 'left', text: 'Me trabé buscando los ejemplos prácticos y dejé pasar los días. Tengo el borrador a medias.' },
+            { speaker: 'right', text: 'Entiendo. Todavía estamos a tiempo si nos organizamos bien estas horas.' }
           ]
         },
-        prompt: 'Elena mira su reloj frente a ti. ¿Qué le propones?',
+        prompt: 'Necesitan definir cómo cerrar el trabajo hoy. ¿Cuál es tu postura?',
         choices: [
-          { id: 'hide', label: '🤫 Decir que todo está listo y encender', delta: -1 },
-          { id: 'bench', label: '⏱️ Pedir 10 min para aislar el pico en banco', delta: 1 }
+          { id: 'ignore', label: 'No insistir para evitar un momento incómodo', delta: -1 },
+          { id: 'plan', label: 'Acordar tareas concretas y una hora de revisión hoy mismo', delta: 1 }
         ]
       },
       {
         actNumber: 3,
-        title: 'Acto 3 · El veredicto en planta',
-        stageMove: '🚪 Sale Leo · Entra en escena Ing. Bruno (Jefe Planta)',
-        leftChar: 'bruno',
+        title: 'Acto 3 · Cierre antes de la entrega',
+        stageMove: 'En escena: Leo y Tú',
+        leftChar: 'leo',
         rightChar: 'you',
-        enterSide: 'left',
+        enterSide: null,
         scriptByPrev: {
-          hide: [
-            { speaker: 'left', text: '¡Saltó el disyuntor de mi planta! ¿Quién mandó ese pulso?' },
-            { speaker: 'right', text: 'Ingeniero Bruno, el parámetro de la IA venía al doble...' }
+          ignore: [
+            { speaker: 'left', text: 'Entonces te mando mis notas sueltas y tú lo armas como veas mejor, ¿sí?' },
+            { speaker: 'right', text: 'Esto no está funcionando bien para ninguno de los dos.' }
           ],
-          bench: [
-            { speaker: 'left', text: 'Vi en el monitor que aislaron el pico de corriente a tiempo.' },
-            { speaker: 'right', text: 'Sí Ingeniero, detectamos que la IA duplicó el límite y lo ajustamos.' }
+          plan: [
+            { speaker: 'left', text: 'Listo, ya completé los ejemplos que me tocaron. Quedó mucho más claro de lo que esperaba.' },
+            { speaker: 'right', text: 'Perfecto, ahora solo falta unir ambas partes y revisar que todo tenga coherencia.' }
           ]
         },
-        prompt: 'Última decisión para cerrar la entrega:',
+        prompt: 'Es momento de cerrar la entrega. ¿Cómo concluyes con Leo?',
         choices: [
-          { id: 'blame', label: '👉 Echarle toda la culpa a Leo y a la IA', ending: 'tense' },
-          { id: 'force', label: '🔥 Forzar el arranque manual sin fusible', ending: 'disaster' },
-          { id: 'patch', label: '🤝 Aplicar parche validado con Sara y documentar', ending: 'master' },
-          { id: 'delay', label: '📅 Posponer el módulo de potencia para mañana', ending: 'diplomatic' }
+          { id: 'master', label: 'Revisar juntos el documento final y acordar mejores plazos a futuro', ending: 'master' },
+          { id: 'tense', label: 'Enviar solo tu parte y avisar que él no cumplió con lo suyo', ending: 'tense' }
         ]
       }
     ],
     endings: {
       master: {
-        badge: '🌟 FINAL MAESTRO',
-        title: 'Equipo a salvo y entrega impecable',
+        badge: 'BUEN MANEJO',
+        title: 'Acuerdo justo y entrega a tiempo',
         mood: 'success',
-        leftChar: 'sara',
+        leftChar: 'leo',
         rightChar: 'you',
-        youSay: 'Parche validado en banco y desplegado sin riesgo.',
+        youSay: 'Revisemos el documento juntos ahora y para el próximo proyecto pongamos avances intermedios.',
         replySpeaker: 'left',
-        replyText: '¡Salvaste la máquina y cumplimos a tiempo! Gran criterio.',
-        good: 'Coordinaste a QA, Dirección y Planta sin quemar el equipo.',
-        bad: 'Dejar documentado el protocolo de validación de IA.'
-      },
-      diplomatic: {
-        badge: '🤝 FINAL DIPLOMÁTICO',
-        title: 'Entrega parcial segura',
-        mood: 'success',
-        leftChar: 'elena',
-        rightChar: 'you',
-        youSay: 'Entregamos hoy el panel de lectura y mañana la etapa de potencia.',
-        replySpeaker: 'left',
-        replyText: 'El cliente aceptó el cronograma dividido. Buen manejo.',
-        good: 'Priorizaste la seguridad y mantuviste la confianza.',
-        bad: 'Toca trabajar extra mañana temprano.'
+        replyText: 'Me parece muy justo. Gracias por hablarlo directo y ayudarme a destrabarme.',
+        good: 'Pusiste límites con respeto y lograste que ambos cumplieran su responsabilidad.',
+        bad: 'Requiere dar seguimiento en los próximos trabajos para confirmar el cambio.'
       },
       tense: {
-        badge: '⚠️ FINAL TENSO',
-        title: 'Equipo dividido por culpas',
+        badge: 'DESENLACE TENSO',
+        title: 'Entrega incompleta y ambiente fracturado',
         mood: 'warn',
         leftChar: 'leo',
         rightChar: 'you',
-        youSay: 'Fue culpa de Leo por confiar en el código de la IA.',
+        youSay: 'Voy a enviar únicamente mi sección y explicaré que el resto quedó pendiente.',
         replySpeaker: 'left',
-        replyText: '¿Me dejas solo frente a gerencia? Así no se trabaja en equipo.',
-        good: 'Se detuvo la falla eléctrica.',
-        bad: 'Rompiste la confianza del equipo al buscar culpables.'
-      },
-      disaster: {
-        badge: '💥 FINAL CATASTRÓFICO',
-        title: 'Fuente quemada en plena demo',
-        mood: 'risk',
-        leftChar: 'bruno',
-        rightChar: 'you',
-        youSay: 'Puenteemos el fusible para salir del paso ya.',
-        replySpeaker: 'left',
-        replyText: '¡BZZT! ¡Quemaste el variador de planta frente al cliente!',
-        good: 'Ninguno.',
-        bad: 'Pérdida de equipo industrial y suspensión del proyecto.'
+        replyText: 'Pudiste decírmelo antes de cerrar todo. Ahora quedamos mal los dos como equipo.',
+        good: 'Evitaste asumir una carga que no te correspondía.',
+        bad: 'La entrega salió incompleta y se deterioró la relación laboral con tu compañero.'
       }
     }
   },
   {
     id: 2,
-    title: 'Entrega de proyecto con retraso',
-    shortDesc: 'Ruido eléctrico en el sensor a 30 minutos de presentar a gerencia.',
+    title: 'Error en un informe importante',
+    shortDesc: 'Detectas un dato equivocado en un reporte que tu directora está por presentar en una reunión.',
     image: '/img/skill-2.jpg',
     stageType: 'chart',
-    cast: ['elena', 'you', 'leo', 'vargas'],
+    cast: ['elena', 'you'],
     acts: [
       {
         actNumber: 1,
-        title: 'Acto 1 · Alerta antes de la reunión',
-        stageMove: '🎬 En escena: Elena (Directora) y Tú',
+        title: 'Acto 1 · El hallazgo antes de la reunión',
+        stageMove: 'En escena: Elena y Tú',
         leftChar: 'elena',
         rightChar: 'you',
         enterSide: null,
         script: [
-          { speaker: 'left', text: 'La gerencia entra en media hora. ¿La demo está lista?' },
-          { speaker: 'right', text: 'Elena, al encender el motor entra ruido y la gráfica salta.' }
+          { speaker: 'left', text: 'Gracias por enviar el reporte mensual. En veinte minutos entro a presentarlo con gerencia.' },
+          { speaker: 'right', text: 'Elena, acabo de revisar el archivo enviado y noté que una de las cifras principales está mal calculada.' }
         ],
-        prompt: 'Quedan 25 minutos en el reloj. ¿Qué haces primero?',
+        prompt: 'La reunión está muy cerca. ¿Cómo decides actuar primero?',
         choices: [
-          { id: 'fake', label: '🤥 Fijar datos falsos en el código', delta: -1 },
-          { id: 'call', label: '🛠️ Llamar a Leo para filtrar la señal', delta: 1 }
+          { id: 'hide', label: 'Minimizar el detalle y esperar que nadie lo note en la reunión', delta: -1 },
+          { id: 'admit', label: 'Confirmarle el error de inmediato y detallar qué parte afecta', delta: 1 }
         ]
       },
       {
         actNumber: 2,
-        title: 'Acto 2 · Diagnóstico contra reloj',
-        stageMove: '🚪 Sale Elena · Entra corriendo Leo (Backend)',
-        leftChar: 'leo',
+        title: 'Acto 2 · Buscando una solución rápida',
+        stageMove: 'En escena: Elena y Tú',
+        leftChar: 'elena',
         rightChar: 'you',
-        enterSide: 'left',
+        enterSide: null,
         scriptByPrev: {
-          fake: [
-            { speaker: 'left', text: 'Oye, vi que pusiste una curva fija en el código...' },
-            { speaker: 'right', text: 'Es solo para que la pantalla no parpadee en la reunión.' }
+          hide: [
+            { speaker: 'left', text: 'Espera, estoy mirando el resumen y los totales no cuadran con el mes pasado. ¿Qué ocurrió aquí?' },
+            { speaker: 'right', text: 'Sí, hubo una diferencia en la tabla final que no alcancé a corregir.' }
           ],
-          call: [
-            { speaker: 'left', text: '¡Llegué! El modo manual está sólido, solo falla el filtro automático.' },
-            { speaker: 'right', text: 'Preparemos la demo con el modo manual real y limpio.' }
+          admit: [
+            { speaker: 'left', text: 'Qué bueno que me avisaste antes de entrar. ¿Cuánto tiempo necesitas para corregirlo?' },
+            { speaker: 'right', text: 'Ya identifiqué exactamente dónde está el fallo en el documento.' }
           ]
         },
-        prompt: 'Se abre la puerta de la sala de juntas. ¿Cómo configuras la pantalla?',
+        prompt: 'Elena necesita una respuesta clara para decidir qué hacer. ¿Qué le respondes?',
         choices: [
-          { id: 'sim', label: '🎭 Dejar el modo simulado sin avisar', delta: -1 },
-          { id: 'real', label: '📊 Mostrar datos reales del modo manual', delta: 1 }
+          { id: 'excuse', label: 'Explicar que los datos originales venían desordenados de otra área', delta: -1 },
+          { id: 'solution', label: 'Asumir la corrección y comprometerte a enviarla en diez minutos', delta: 1 }
         ]
       },
       {
         actNumber: 3,
-        title: 'Acto 3 · Entra el Cliente VIP',
-        stageMove: '🚪 Sale Leo · Entra Sr. Vargas (Cliente VIP)',
-        leftChar: 'vargas',
+        title: 'Acto 3 · Cierre del incidente',
+        stageMove: 'En escena: Elena y Tú',
+        leftChar: 'elena',
         rightChar: 'you',
-        enterSide: 'left',
+        enterSide: null,
         scriptByPrev: {
-          sim: [
-            { speaker: 'left', text: 'Interesante gráfica... ¿Pueden encender el motor en vivo ahora?' },
-            { speaker: 'right', text: 'Eh... Señor Vargas, déjeme explicarle qué pasa con la señal...' }
+          excuse: [
+            { speaker: 'left', text: 'Más allá de quién envió los datos base, necesito saber si puedo confiar en el archivo antes de presentarlo.' },
+            { speaker: 'right', text: 'Tienes razón, debí verificar todo antes de mandarlo.' }
           ],
-          real: [
-            { speaker: 'left', text: 'El control manual responde muy bien. ¿Y el modo automático?' },
-            { speaker: 'right', text: 'Señor Vargas, le tenemos una propuesta transparente para esa etapa.' }
+          solution: [
+            { speaker: 'left', text: 'Recibí la versión corregida justo a tiempo. La reunión salió sin problemas.' },
+            { speaker: 'right', text: 'Me alegra que llegara a tiempo, Elena.' }
           ]
         },
-        prompt: 'El Sr. Vargas espera tu cierre. ¿Qué le dices?',
+        prompt: '¿Cómo cierras esta situación con tu directora?',
         choices: [
-          { id: 'lie', label: '🤥 Insistir en que todo funciona al 100 %', ending: 'disaster' },
-          { id: 'panic', label: '😰 Cancelar la presentación y pedir 1 mes', ending: 'tense' },
-          { id: 'plan24', label: '🎯 Entregar hoy control manual + filtro en 24 h', ending: 'master' },
-          { id: 'ext', label: '🤝 Acordar entrega conjunta el viernes', ending: 'diplomatic' }
+          { id: 'master', label: 'Proponer una revisión previa con lista de control para futuros reportes', ending: 'master' },
+          { id: 'tense', label: 'Dejar el tema cerrado ahí y evitar mencionarlo de nuevo', ending: 'tense' }
         ]
       }
     ],
     endings: {
       master: {
-        badge: '🌟 FINAL MAESTRO',
-        title: 'Confianza total del directorio',
-        mood: 'success',
-        leftChar: 'vargas',
-        rightChar: 'you',
-        youSay: 'Hoy operamos en modo manual verificado y mañana activamos el filtro.',
-        replySpeaker: 'left',
-        replyText: '¡Excelente! Valoro la honestidad técnica. Tienen luz verde.',
-        good: 'Hablaste con datos reales y diste un plan concreto de 24 h.',
-        bad: 'Cumplir puntual el despliegue mañana.'
-      },
-      diplomatic: {
-        badge: '🤝 FINAL DIPLOMÁTICO',
-        title: 'Prórroga aprobada en orden',
+        badge: 'BUEN MANEJO',
+        title: 'Responsabilidad y confianza mantenida',
         mood: 'success',
         leftChar: 'elena',
         rightChar: 'you',
-        youSay: 'Agendemos la validación final este viernes con el filtro listo.',
+        youSay: 'Voy a usar una lista de verificación antes de cada envío para asegurar que no vuelva a pasar.',
         replySpeaker: 'left',
-        replyText: 'Gerencia aceptó esperar al viernes gracias a tu claridad.',
-        good: 'Evitaste entregar algo inestable sin mentir.',
-        bad: 'Perdiste unos días de margen en el cronograma.'
+        replyText: 'Valoro mucho tu transparencia y que traigas una mejora concreta. Seguimos adelante.',
+        good: 'Comunicar un error a tiempo con una solución práctica refuerza tu credibilidad.',
+        bad: 'Deberás dedicar unos minutos extra de revisión antes de cada entrega.'
       },
       tense: {
-        badge: '⚠️ FINAL TENSO',
-        title: 'Imagen de desorganización',
+        badge: 'DESENLACE TENSO',
+        title: 'Duda sobre el rigor de tus entregas',
         mood: 'warn',
         leftChar: 'elena',
         rightChar: 'you',
-        youSay: 'Mejor suspendamos todo por un mes.',
+        youSay: 'Listo, ya quedó corregido, esperemos que en el próximo mes no haya inconvenientes.',
         replySpeaker: 'left',
-        replyText: 'Nos dieron el plazo, pero quedamos como un equipo improvisado.',
-        good: 'No presentaste datos falsos.',
-        bad: 'Pediste demasiado tiempo sin mostrar el avance real.'
-      },
-      disaster: {
-        badge: '💥 FINAL CATASTRÓFICO',
-        title: 'Simulación descubierta en vivo',
-        mood: 'risk',
-        leftChar: 'vargas',
-        rightChar: 'you',
-        youSay: 'Sí claro, esa gráfica es 100 % en tiempo real...',
-        replySpeaker: 'left',
-        replyText: '¡El motor está apagado y la gráfica sigue moviéndose! Se acabó el contrato.',
-        good: 'Ninguno.',
-        bad: 'Mentir en una demostración técnica destruye la reputación.'
+        replyText: 'De acuerdo, pero a partir de ahora prefiero revisar tus reportes un día antes por seguridad.',
+        good: 'El informe final pudo corregirse.',
+        bad: 'Al no proponer medidas preventivas, perdiste parte de la autonomía que tenías.'
       }
     }
   },
   {
     id: 3,
-    title: 'Feedback negativo a un supervisor',
-    shortDesc: 'Tu jefe ordena apagar una alarma de presión para sacar un lote.',
+    title: 'Recibir una crítica directa de tu jefe',
+    shortDesc: 'Tu supervisor te llama la atención en un tono seco porque tu último trabajo no cumplió lo esperado.',
     image: '/img/skill-3.jpg',
     stageType: 'valve',
-    cast: ['bruno', 'you', 'sara', 'elena'],
+    cast: ['bruno', 'you'],
     acts: [
       {
         actNumber: 1,
-        title: 'Acto 1 · Orden riesgosa en planta',
-        stageMove: '🎬 En escena: Ing. Bruno (Jefe Planta) y Tú',
+        title: 'Acto 1 · El comentario inesperado',
+        stageMove: 'En escena: Ing. Bruno y Tú',
         leftChar: 'bruno',
         rightChar: 'you',
         enterSide: null,
         script: [
-          { speaker: 'left', text: '¡Apaga ya esa alarma del tablero! Urge sacar este lote.' },
-          { speaker: 'right', text: 'Ingeniero Bruno, sin esa alarma puede reventar la válvula.' }
+          { speaker: 'left', text: 'Revisé el avance que dejaste ayer. Está incompleto y te tomó más tiempo del que acordamos.' },
+          { speaker: 'right', text: 'Pensé que con los puntos principales cubiertos ya era suficiente para esta primera etapa.' }
         ],
-        prompt: 'Los operarios están mirando. ¿Cuál es tu primer paso?',
+        prompt: 'El tono de tu supervisor es directo. ¿Cómo reaccionas?',
         choices: [
-          { id: 'shout', label: '🗣️ Confrontarlo en voz alta frente al taller', delta: -1 },
-          { id: 'private', label: '🤫 Pedirle ver el manómetro a solas un segundo', delta: 1 }
+          { id: 'defensive', label: 'Responderle que las instrucciones iniciales no fueron claras', delta: -1 },
+          { id: 'listen', label: 'Mantener la calma y pedirle ejemplos concretos de qué faltó', delta: 1 }
         ]
       },
       {
         actNumber: 2,
-        title: 'Acto 2 · Llega Auditoría de Calidad',
-        stageMove: '🚪 Entra en escena Sara (Líder QA) con bitácora',
-        leftChar: 'sara',
-        rightChar: 'bruno',
-        enterSide: 'left',
+        title: 'Acto 2 · Aclarando expectativas',
+        stageMove: 'En escena: Ing. Bruno y Tú',
+        leftChar: 'bruno',
+        rightChar: 'you',
+        enterSide: null,
         scriptByPrev: {
-          shout: [
-            { speaker: 'left', text: 'Escuché los gritos desde el pasillo. ¿Qué pasa con la válvula 4?' },
-            { speaker: 'right', text: '¡Aquí quieren enseñarme a mí cómo manejar mi propia planta!' }
+          defensive: [
+            { speaker: 'left', text: 'Si algo no estaba claro, pudiste preguntarme el lunes en lugar de entregarlo a medias.' },
+            { speaker: 'right', text: 'Es cierto, asumí cosas sin confirmarlas contigo.' }
           ],
-          private: [
-            { speaker: 'left', text: 'Chicos, el sensor marca burbujas de aire en la toma secundaria.' },
-            { speaker: 'right', text: 'Mmm... si es aire en la toma, podemos purgarla sin apagar el PLC.' }
+          listen: [
+            { speaker: 'left', text: 'Faltó incluir el resumen de costos y las fechas estimadas. Sin eso no puedo aprobar la propuesta.' },
+            { speaker: 'right', text: 'Ahora entiendo exactamente qué necesitabas ver en el documento.' }
           ]
         },
-        prompt: 'Sara te pregunta qué procedimiento vas a registrar:',
+        prompt: 'Ya sabes dónde estuvo la diferencia. ¿Cuál es tu siguiente paso?',
         choices: [
-          { id: 'bypass', label: '⚡ Puenteo rápido sin anotar en bitácora', delta: -1 },
-          { id: 'purge', label: '🔧 Purga de 3 minutos con alarma activa', delta: 1 }
+          { id: 'quiet', label: 'Asentir en silencio para terminar la conversación rápido', delta: -1 },
+          { id: 'clarify', label: 'Repasar los criterios exactos para asegurarte de no omitir nada', delta: 1 }
         ]
       },
       {
         actNumber: 3,
-        title: 'Acto 3 · Cierre con el Supervisor',
-        stageMove: '🚪 Sale Sara · Quedan Ing. Bruno y Tú frente al tablero',
+        title: 'Acto 3 · Definiendo la corrección',
+        stageMove: 'En escena: Ing. Bruno y Tú',
         leftChar: 'bruno',
         rightChar: 'you',
-        enterSide: 'right',
+        enterSide: null,
         scriptByPrev: {
-          bypass: [
-            { speaker: 'left', text: 'La presión sigue subiendo en rojo... ¿Seguro que aguanta?' },
-            { speaker: 'right', text: 'Jefe, la tubería está vibrando demasiado...' }
+          quiet: [
+            { speaker: 'left', text: 'Bueno, haz los cambios y me avisas cuando esté listo.' },
+            { speaker: 'right', text: 'Todavía tengo dudas sobre el formato, pero veré cómo resolverlo.' }
           ],
-          purge: [
-            { speaker: 'left', text: 'Listo, bajó la presión a rango normal y no perdimos el lote.' },
-            { speaker: 'right', text: 'Ingeniero, así protegemos tanto la entrega como su turno.' }
+          clarify: [
+            { speaker: 'left', text: 'Exacto, con esos dos apartados completos queda listo para aprobarse sin problema.' },
+            { speaker: 'right', text: 'Perfecto, ya tengo todo anotado para ajustarlo hoy.' }
           ]
         },
-        prompt: '¿Cómo cierras el acuerdo con el Ing. Bruno?',
+        prompt: 'Para cerrar la conversación de forma profesional, ¿qué propones?',
         choices: [
-          { id: 'obey', label: '🫡 Dejar la alarma apagada todo el turno', ending: 'disaster' },
-          { id: 'report', label: '📋 Denunciarlo sin hablar más con él', ending: 'tense' },
-          { id: 'ally', label: '🌟 Purga completada + checklist rápido por turno', ending: 'master' },
-          { id: 'pause', label: '🤝 Parada preventiva de 20 min firmada por ambos', ending: 'diplomatic' }
+          { id: 'master', label: 'Acordar una hora de entrega para revisar juntos los ajustes', ending: 'master' },
+          { id: 'tense', label: 'Hacer los cambios por tu cuenta y enviarlos sin volver a consultar', ending: 'tense' }
         ]
       }
     ],
     endings: {
       master: {
-        badge: '🌟 FINAL MAESTRO',
-        title: 'Respeto ganado y planta segura',
+        badge: 'BUEN MANEJO',
+        title: 'Comunicación profesional y expectativas claras',
         mood: 'success',
         leftChar: 'bruno',
         rightChar: 'you',
-        youSay: 'Purgamos en 3 minutos y dejamos la protección activa.',
+        youSay: 'Hoy por la tarde te muestro el documento actualizado con esos dos puntos para validarlo juntos.',
         replySpeaker: 'left',
-        replyText: 'Buen ojo y gracias por decírmelo en privado. Cuenta conmigo.',
-        good: 'Cuidaste la seguridad sin humillar a tu supervisor.',
-        bad: 'Revisar la purga al inicio de cada turno.'
-      },
-      diplomatic: {
-        badge: '🤝 FINAL DIPLOMÁTICO',
-        title: 'Parada preventiva acordada',
-        mood: 'success',
-        leftChar: 'sara',
-        rightChar: 'you',
-        youSay: 'Hagamos una pausa firmada de 20 minutos para enfriar la línea.',
-        replySpeaker: 'left',
-        replyText: 'Protocolo aprobado por QA y Planta. Cero accidentes.',
-        good: 'Resolviste el riesgo respaldado por el área de calidad.',
-        bad: 'El lote salió con 20 minutos de retraso.'
+        replyText: 'Muy bien, así trabajamos con claridad. Nos vemos a las cuatro para revisarlo.',
+        good: 'Recibiste la crítica sin ponerte a la defensiva y transformaste el reclamo en un plan concreto.',
+        bad: 'Toca ajustar tu agenda del día para completar los pendientes.'
       },
       tense: {
-        badge: '⚠️ FINAL TENSO',
-        title: 'Relación laboral rota',
+        badge: 'DESENLACE TENSO',
+        title: 'Riesgo de repetir el mismo malentendido',
         mood: 'warn',
         leftChar: 'bruno',
         rightChar: 'you',
-        youSay: 'Voy a pasar un reporte directo en su contra.',
+        youSay: 'Entendido, yo lo modifico y te lo dejo en tu correo cuando termine.',
         replySpeaker: 'left',
-        replyText: 'La línea paró, pero ahora el ambiente en el taller es insostenible.',
-        good: 'Impediste que se apagara la alarma.',
-        bad: 'Faltó comunicación asertiva antes de escalar el conflicto.'
-      },
-      disaster: {
-        badge: '💥 FINAL CATASTRÓFICO',
-        title: 'Válvula reventada bajo tu firma',
-        mood: 'risk',
-        leftChar: 'bruno',
-        rightChar: 'you',
-        youSay: 'Dejemos la alarma desactivada para terminar rápido.',
-        replySpeaker: 'left',
-        replyText: '¡PUM! ¡Voló el sello de vapor y tu usuario quedó registrado en el PLC!',
-        good: 'Ninguno.',
-        bad: 'Obedecer una orden insegura compromete tu responsabilidad técnica.'
+        replyText: 'Espero que esta vez sí venga completo, porque no tenemos margen para otra corrección.',
+        good: 'Evitaste una discusión directa.',
+        bad: 'Al no confirmar acuerdos ni fechas, queda tensión y riesgo de otro error.'
       }
     }
   },
   {
     id: 4,
-    title: 'Negociación de alcance con cliente',
-    shortDesc: 'A 2 días de entregar la web, el cliente pide una App móvil gratis.',
+    title: 'Pedido adicional fuera de plazo',
+    shortDesc: 'Un cliente solicita agregar tareas nuevas un viernes por la tarde para una entrega del lunes.',
     image: '/img/skill-4.jpg',
     stageType: 'client',
-    cast: ['vargas', 'you', 'leo', 'elena'],
+    cast: ['vargas', 'you'],
     acts: [
       {
         actNumber: 1,
-        title: 'Acto 1 · El pedido sorpresa',
-        stageMove: '🎬 En escena: Sr. Vargas (Cliente VIP) y Tú',
+        title: 'Acto 1 · La solicitud de último minuto',
+        stageMove: 'En escena: Sr. Vargas y Tú',
         leftChar: 'vargas',
         rightChar: 'you',
         enterSide: null,
         script: [
-          { speaker: 'left', text: 'La web quedó genial, pero para el viernes incluyan también una App móvil.' },
-          { speaker: 'right', text: 'Señor Vargas, hoy es miércoles y una App lleva su propio desarrollo.' }
+          { speaker: 'left', text: 'El avance se ve muy bien, pero para la entrega del lunes necesito que agreguen un análisis adicional.' },
+          { speaker: 'right', text: 'Señor Vargas, ese punto no estaba contemplado en el plan original y hoy es viernes por la tarde.' }
         ],
-        prompt: 'El cliente insiste en que «es facilito». ¿Qué respondes primero?',
+        prompt: 'El cliente espera que aceptes el cambio. ¿Cómo respondes inicialmente?',
         choices: [
-          { id: 'yes', label: '😰 Prometer que el viernes sale todo sin costo', delta: -1 },
-          { id: 'scope', label: '📐 Explicar el impacto técnico de una App offline', delta: 1 }
+          { id: 'accept', label: 'Aceptar de inmediato para mantener una buena relación', delta: -1 },
+          { id: 'evaluate', label: 'Explicar con calma que el nuevo pedido requiere tiempo adicional', delta: 1 }
         ]
       },
       {
         actNumber: 2,
-        title: 'Acto 2 · Reacción del equipo técnico',
-        stageMove: '🚪 Sale Sr. Vargas · Entra Leo (Backend) alarmado',
-        leftChar: 'leo',
+        title: 'Acto 2 · Negociando los tiempos',
+        stageMove: 'En escena: Sr. Vargas y Tú',
+        leftChar: 'vargas',
         rightChar: 'you',
-        enterSide: 'left',
+        enterSide: null,
         scriptByPrev: {
-          yes: [
-            { speaker: 'left', text: '¡¿Le dijiste que sí a una App en dos días?! ¡Nos vamos a quemar!' },
-            { speaker: 'right', text: 'Tranquilo Leo, veamos cómo salir de este lío...' }
+          accept: [
+            { speaker: 'left', text: 'Excelente, sabía que podía contar contigo. Si puedes, incluye también las gráficas comparativas.' },
+            { speaker: 'right', text: 'Con todo eso encima, será muy difícil cumplir con calidad para el lunes.' }
           ],
-          scope: [
-            { speaker: 'left', text: 'Menos mal frenaste eso; puedo armar un prototipo visual para el lunes.' },
-            { speaker: 'right', text: '¡Buena idea! Con eso le proponemos una Fase 2 formal.' }
+          evaluate: [
+            { speaker: 'left', text: 'Entiendo que es poco tiempo, pero tengo una presentación el lunes y me ayudaría mucho tenerlo.' },
+            { speaker: 'right', text: 'Podemos buscar una alternativa que no ponga en riesgo lo que ya está listo.' }
           ]
         },
-        prompt: 'Entra Elena para definir la oferta final al cliente:',
+        prompt: 'Debes definir un compromiso realista. ¿Qué le propones?',
         choices: [
-          { id: 'crunch', label: '🌙 Obligar al equipo a no dormir hasta el viernes', delta: -1 },
-          { id: 'phase2', label: '🚀 Preparar propuesta de Fase 2 con prototipo', delta: 1 }
+          { id: 'rush', label: 'Prometer trabajar el fin de semana para entregar todo el lunes', delta: -1 },
+          { id: 'propose', label: 'Entregar lo acordado el lunes y enviar el análisis adicional el miércoles', delta: 1 }
         ]
       },
       {
         actNumber: 3,
-        title: 'Acto 3 · Acuerdo final con Dirección y Cliente',
-        stageMove: '🚪 Entra Sr. Vargas junto a Dirección para cerrar el trato',
+        title: 'Acto 3 · Acuerdo final con el cliente',
+        stageMove: 'En escena: Sr. Vargas y Tú',
         leftChar: 'vargas',
         rightChar: 'you',
-        enterSide: 'left',
+        enterSide: null,
         scriptByPrev: {
-          crunch: [
-            { speaker: 'left', text: 'Ya es viernes... ¿Por qué la App se cierra sola y la web da error?' },
-            { speaker: 'right', text: 'Señor Vargas, tuvimos que tocar la base de datos de madrugada...' }
+          rush: [
+            { speaker: 'left', text: 'Perfecto, entonces el lunes a primera hora reviso todo el paquete completo.' },
+            { speaker: 'right', text: 'Voy a tener que apresurar todo el fin de semana para intentar llegar.' }
           ],
-          phase2: [
-            { speaker: 'left', text: 'Vi el avance de la web y está impecable. ¿Qué pensaron para la App?' },
-            { speaker: 'right', text: 'Tenemos una ruta segura para no arriesgar su lanzamiento del viernes.' }
+          propose: [
+            { speaker: 'left', text: 'Si el lunes tengo la entrega principal segura, puedo presentar el anexo adicional el miércoles sin problema.' },
+            { speaker: 'right', text: 'Así aseguramos que ambas partes queden bien hechas y sin errores.' }
           ]
         },
-        prompt: 'Cierra la negociación con el Sr. Vargas:',
+        prompt: '¿Cómo cierras la negociación con el Sr. Vargas?',
         choices: [
-          { id: 'broken', label: '💥 Entregar web y App a medias hoy mismo', ending: 'disaster' },
-          { id: 'legal', label: '😒 Decirle «lea el contrato, no incluye App»', ending: 'tense' },
-          { id: 'winwin', label: '🌟 Lanzar web el viernes + firmar Fase 2 móvil', ending: 'master' },
-          { id: 'pwa', label: '🤝 Activar versión web adaptable al celular hoy', ending: 'diplomatic' }
+          { id: 'master', label: 'Confirmar por escrito las dos fechas de entrega y su alcance', ending: 'master' },
+          { id: 'tense', label: 'Rechazar el pedido adicional sin ofrecer ninguna fecha alternativa', ending: 'tense' }
         ]
       }
     ],
     endings: {
       master: {
-        badge: '🌟 FINAL MAESTRO',
-        title: 'Lanzamiento exitoso y nuevo contrato',
+        badge: 'BUEN MANEJO',
+        title: 'Alcance protegido y cliente satisfecho',
         mood: 'success',
         leftChar: 'vargas',
         rightChar: 'you',
-        youSay: 'El viernes lanzamos la web al 100 % y el lunes arrancamos la App como Fase 2.',
+        youSay: 'Le envío un correo ahora confirmando la entrega principal el lunes y el análisis adicional el miércoles.',
         replySpeaker: 'left',
-        replyText: '¡Trato hecho! Cuidemos la salida del viernes y te apruebo el nuevo presupuesto.',
-        good: 'Protegiste a tu equipo, aseguraste la calidad y vendiste la Fase 2.',
-        bad: 'Enviar la cotización formal hoy por la tarde.'
-      },
-      diplomatic: {
-        badge: '🤝 FINAL DIPLOMÁTICO',
-        title: 'Solución móvil adaptable a tiempo',
-        mood: 'success',
-        leftChar: 'leo',
-        rightChar: 'you',
-        youSay: 'Activamos vista móvil en la web para este viernes mientras cotizamos la App offline.',
-        replySpeaker: 'left',
-        replyText: '¡Quedó súper limpio y sin trasnochar! El cliente quedó feliz.',
-        good: 'Diste una alternativa técnica rápida sin romper el alcance.',
-        bad: 'La función sin internet quedará para el próximo trimestre.'
+        replyText: 'Trato hecho. Aprecio que cuiden la calidad y me den fechas claras.',
+        good: 'Negociaste con firmeza y empatía sin comprometer tu tiempo libre ni la calidad del trabajo.',
+        bad: 'Deberás organizar tu agenda de inicio de semana para cumplir puntual el miércoles.'
       },
       tense: {
-        badge: '⚠️ FINAL TENSO',
-        title: 'Entrega fría y cliente perdido',
+        badge: 'DESENLACE TENSO',
+        title: 'Cierre rígido y cliente inconforme',
         mood: 'warn',
         leftChar: 'vargas',
         rightChar: 'you',
-        youSay: 'Si no está en el contrato no es mi problema.',
+        youSay: 'Lo siento, no podemos agregar nada nuevo porque no estaba en el acuerdo inicial.',
         replySpeaker: 'left',
-        replyText: 'Les recibo la web el viernes, pero la App la haré con otra empresa.',
-        good: 'No sobrecargaste al equipo.',
-        bad: 'Perdiste un cliente clave por falta de tacto comercial.'
-      },
-      disaster: {
-        badge: '💥 FINAL CATASTRÓFICO',
-        title: 'Doble fallo en producción',
-        mood: 'risk',
-        leftChar: 'vargas',
-        rightChar: 'you',
-        youSay: 'Subimos todo junto aunque falten pruebas.',
-        replySpeaker: 'left',
-        replyText: '¡Se cayó la web en pleno lanzamiento por culpa de la App incompleta!',
-        good: 'Ninguno.',
-        bad: 'Aceptar cambios de alcance sin tiempo destruye todo el entregable.'
+        replyText: 'Entiendo las reglas, pero esperaba un poco más de flexibilidad para buscar una solución.',
+        good: 'Protegiste el alcance original del proyecto.',
+        bad: 'Dar un no rotundo sin proponer alternativas genera fricción innecesaria con el cliente.'
       }
     }
   }
@@ -1004,14 +725,11 @@ if (!state.visits.includes(today)) {
 }
 
 let page = 'home';
-let authTab = 'login';
-let registerStep = 1;
-let registerDraft = {
+let loginStep = 1;
+let loginDraft = {
   name: '',
   university: 'ESPOL',
-  career: 'Ingeniería Mecatrónica',
-  password: '',
-  quizAnswers: {}
+  career: CAREERS[0]
 };
 let demoChat = [];
 
@@ -1460,447 +1178,245 @@ function shell() {
   }
 }
 
-// 6. PANTALLA DE ACCESO Y PERSONALIZACIÓN INTERACTIVA POR PASOS
-function startOnboardingWizard(mode, name, password = '') {
-  registerDraft.mode = mode;
-  registerDraft.name = name;
-  registerDraft.password = password;
-  registerDraft.university = mode === 'guest' ? 'Invitado' : (registerDraft.university || 'ESPOL');
-  registerStep = 1; // 1: Carrera, 2: Quiz 1, 3: Quiz 2, 4: Quiz 3, 5: Personalización activada
-  authTab = 'onboarding';
-  renderLogin();
-}
-
-function computeQuizStats() {
-  const gear = CAREER_GEAR[registerDraft.career] || CAREER_GEAR['Ingeniería Mecatrónica'];
-  let [prac, rigor, lead] = [28, 28, 28];
-  if (registerStep > 1) {
-    prac += Math.round((gear.stats[0] - 60) * 0.5);
-    rigor += Math.round((gear.stats[1] - 60) * 0.5);
-    lead += Math.round((gear.stats[2] - 60) * 0.5);
-  }
-  AI_QUIZ_QUESTIONS.forEach((q, idx) => {
-    if (registerStep > idx + 2) {
-      const picked = q.options.find(o => o.id === registerDraft.quizAnswers[q.id]);
-      if (picked?.boost) {
-        prac += picked.boost[0];
-        rigor += picked.boost[1];
-        lead += picked.boost[2];
-      }
-    }
-  });
-  return [Math.min(100, prac), Math.min(100, rigor), Math.min(100, lead)];
-}
-
-window.previewQuizBoost = function (b0, b1, b2, careerName) {
-  const base = computeQuizStats();
-  const p = Math.min(100, base[0] + (b0 || 0));
-  const r = Math.min(100, base[1] + (b1 || 0));
-  const l = Math.min(100, base[2] + (b2 || 0));
-  const bar0 = document.getElementById('QuizBar0');
-  const bar1 = document.getElementById('QuizBar1');
-  const bar2 = document.getElementById('QuizBar2');
-  const val0 = document.getElementById('QuizVal0');
-  const val1 = document.getElementById('QuizVal1');
-  const val2 = document.getElementById('QuizVal2');
-  if (bar0) bar0.style.width = `${p}%`;
-  if (bar1) bar1.style.width = `${r}%`;
-  if (bar2) bar2.style.width = `${l}%`;
-  if (val0) val0.textContent = `${p}%`;
-  if (val1) val1.textContent = `${r}%`;
-  if (val2) val2.textContent = `${l}%`;
-
-  const avatarEl = document.getElementById('QuizMiniActor');
-  if (avatarEl) avatarEl.classList.add('quiz-actor-wave');
-  const tagEl = document.getElementById('QuizGearTag');
-  if (careerName && tagEl && CAREER_GEAR[careerName]) {
-    tagEl.textContent = CAREER_GEAR[careerName].tag;
-  }
-};
-
-window.resetQuizPreview = function () {
-  const [p, r, l] = computeQuizStats();
-  const bar0 = document.getElementById('QuizBar0');
-  const bar1 = document.getElementById('QuizBar1');
-  const bar2 = document.getElementById('QuizBar2');
-  const val0 = document.getElementById('QuizVal0');
-  const val1 = document.getElementById('QuizVal1');
-  const val2 = document.getElementById('QuizVal2');
-  if (bar0) bar0.style.width = `${p}%`;
-  if (bar1) bar1.style.width = `${r}%`;
-  if (bar2) bar2.style.width = `${l}%`;
-  if (val0) val0.textContent = `${p}%`;
-  if (val1) val1.textContent = `${r}%`;
-  if (val2) val2.textContent = `${l}%`;
-  const avatarEl = document.getElementById('QuizMiniActor');
-  if (avatarEl) avatarEl.classList.remove('quiz-actor-wave');
-};
-
-function renderQuizInteractiveStage() {
-  const gear = CAREER_GEAR[registerDraft.career] || CAREER_GEAR['Ingeniería Mecatrónica'];
-  const [p, r, l] = computeQuizStats();
-  const isDone = registerStep === 5;
+function renderCareerStickman(careerName) {
+  const gear = CAREER_GEAR[careerName] || CAREER_GEAR[CAREERS[0]];
   const customChar = {
-    name: registerDraft.name || 'Tú',
+    name: loginDraft.name || 'Tú',
     role: gear.tag,
     color: gear.color,
     shirt: gear.shirt,
     hair: gear.hair,
     prop: gear.prop,
-    tie: registerDraft.career === 'Negocios y Administración'
+    tie: careerName === 'Negocios y Administración'
   };
 
   return `
-    <div class="quiz-stage-card">
-      <div class="quiz-avatar-col">
-        <svg viewBox="65 26 135 152" width="96" height="106" aria-hidden="true">
-          <g id="QuizMiniActor" class="stick-actor ${isDone ? 'mood-success' : 'is-speaking'}" transform="translate(125, 50)">
-            <ellipse cx="0" cy="116" rx="22" ry="4.5" fill="rgba(15,23,42,0.08)"/>
-            <g class="actor-rig" transform="scale(0.82)">
-              <g transform="translate(-5, 76)">
-                <line x1="0" y1="0" x2="-6" y2="30" stroke="#475569" stroke-width="4.4" stroke-linecap="round"/>
-                <line x1="-6" y1="30" x2="-8" y2="58" stroke="#475569" stroke-width="4.4" stroke-linecap="round"/>
-              </g>
-              <g transform="translate(5, 76)">
-                <line x1="0" y1="0" x2="7" y2="30" stroke="#1e293b" stroke-width="4.8" stroke-linecap="round"/>
-                <line x1="7" y1="30" x2="10" y2="58" stroke="#1e293b" stroke-width="4.8" stroke-linecap="round"/>
-              </g>
-              <path d="M-10 24 L11 24 L9 76 L-8 76 Z" fill="${customChar.shirt}" stroke="${customChar.color}" stroke-width="3" stroke-linejoin="round"/>
-              ${customChar.tie ? `<path d="M2 26 L5 48 L2 54 L-1 48 Z" fill="${customChar.color}"/>` : ''}
-              <line x1="0" y1="17" x2="0" y2="25" stroke="#1e293b" stroke-width="4.5" stroke-linecap="round"/>
-              <g class="head-rig">
-                <circle cx="0" cy="0" r="17" fill="#ffffff" stroke="#1e293b" stroke-width="3.2"/>
-                <path d="M16 -2 L21 2 L16 4" fill="#ffffff" stroke="#1e293b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-                ${renderCharacterHairAndHat(customChar)}
-                <circle cx="4" cy="-2" r="2.1" fill="#0f172a"/>
-                <circle cx="11" cy="-2" r="2.1" fill="#0f172a"/>
-                <path d="M3 7 Q8 12 13 7" fill="none" stroke="${customChar.color}" stroke-width="2.2" stroke-linecap="round"/>
-              </g>
-              <g class="shoulder-front" transform="translate(5, 28)">
-                <line x1="0" y1="0" x2="13" y2="19" stroke="${customChar.color}" stroke-width="4.5" stroke-linecap="round"/>
-                <circle cx="13" cy="19" r="2.7" fill="${customChar.color}"/>
-                <g class="elbow-front" transform="translate(13, 19)">
-                  <line x1="0" y1="0" x2="17" y2="-6" stroke="${customChar.color}" stroke-width="4.5" stroke-linecap="round"/>
-                  <g transform="translate(17, -6)">
-                    <circle cx="0" cy="0" r="3.6" fill="#fde68a" stroke="${customChar.color}" stroke-width="1.8"/>
-                    ${renderCharacterProp(customChar)}
-                  </g>
-                </g>
+    <svg viewBox="65 24 135 152" width="112" height="122" aria-hidden="true">
+      <g id="CareerMiniActor" class="stick-actor" transform="translate(125, 50)">
+        <ellipse cx="0" cy="116" rx="24" ry="4.5" fill="rgba(15,23,42,0.08)"/>
+        <g class="actor-rig" transform="scale(0.84)">
+          <g transform="translate(-5, 76)">
+            <line x1="0" y1="0" x2="-6" y2="30" stroke="#475569" stroke-width="4.4" stroke-linecap="round"/>
+            <line x1="-6" y1="30" x2="-8" y2="58" stroke="#475569" stroke-width="4.4" stroke-linecap="round"/>
+          </g>
+          <g transform="translate(5, 76)">
+            <line x1="0" y1="0" x2="7" y2="30" stroke="#1e293b" stroke-width="4.8" stroke-linecap="round"/>
+            <line x1="7" y1="30" x2="10" y2="58" stroke="#1e293b" stroke-width="4.8" stroke-linecap="round"/>
+          </g>
+          <path d="M-10 24 L11 24 L9 76 L-8 76 Z" fill="${customChar.shirt}" stroke="${customChar.color}" stroke-width="3" stroke-linejoin="round"/>
+          ${customChar.tie ? `<path d="M2 26 L5 48 L2 54 L-1 48 Z" fill="${customChar.color}"/>` : ''}
+          <line x1="0" y1="17" x2="0" y2="25" stroke="#1e293b" stroke-width="4.5" stroke-linecap="round"/>
+          <g class="head-rig">
+            <circle cx="0" cy="0" r="17" fill="#ffffff" stroke="#1e293b" stroke-width="3.2"/>
+            <path d="M16 -2 L21 2 L16 4" fill="#ffffff" stroke="#1e293b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            ${renderCharacterHairAndHat(customChar)}
+            <circle cx="4" cy="-2" r="2.1" fill="#0f172a"/>
+            <circle cx="11" cy="-2" r="2.1" fill="#0f172a"/>
+            <path d="M3 7 Q8 12 13 7" fill="none" stroke="${customChar.color}" stroke-width="2.2" stroke-linecap="round"/>
+          </g>
+          <g class="shoulder-front" transform="translate(5, 28)">
+            <line x1="0" y1="0" x2="13" y2="19" stroke="${customChar.color}" stroke-width="4.5" stroke-linecap="round"/>
+            <circle cx="13" cy="19" r="2.7" fill="${customChar.color}"/>
+            <g class="elbow-front" transform="translate(13, 19)">
+              <line x1="0" y1="0" x2="17" y2="-6" stroke="${customChar.color}" stroke-width="4.5" stroke-linecap="round"/>
+              <g transform="translate(17, -6)">
+                <circle cx="0" cy="0" r="3.6" fill="#fde68a" stroke="${customChar.color}" stroke-width="1.8"/>
+                ${renderCharacterProp(customChar)}
               </g>
             </g>
           </g>
-        </svg>
-        <span id="QuizGearTag" style="font-size:9.5px; font-weight:700; color:${customChar.color}; background:${customChar.shirt}; padding:2px 8px; border-radius:10px; white-space:nowrap;">
-          ${esc(gear.tag)}
-        </span>
-      </div>
-
-      <div class="quiz-bars-col">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-          <strong style="font-size:11.5px; color:#202a3d;">ADN Sync · ${esc(registerDraft.name || 'Tú')}</strong>
-          <span style="font-size:10px; color:var(--blue); font-weight:700;">Paso ${Math.min(4, registerStep)}/4</span>
-        </div>
-
-        <div class="quiz-stat-row">
-          <div class="quiz-stat-head"><span>Acción práctica</span><strong id="QuizVal0">${p}%</strong></div>
-          <div class="quiz-stat-track"><span id="QuizBar0" style="width:${p}%; background:#365cf5;"></span></div>
-        </div>
-        <div class="quiz-stat-row">
-          <div class="quiz-stat-head"><span>Rigor técnico</span><strong id="QuizVal1">${r}%</strong></div>
-          <div class="quiz-stat-track"><span id="QuizBar1" style="width:${r}%; background:#059669;"></span></div>
-        </div>
-        <div class="quiz-stat-row" style="margin-bottom:0;">
-          <div class="quiz-stat-head"><span>Liderazgo</span><strong id="QuizVal2">${l}%</strong></div>
-          <div class="quiz-stat-track"><span id="QuizBar2" style="width:${l}%; background:#ea580c;"></span></div>
-        </div>
-      </div>
-    </div>
+        </g>
+      </g>
+    </svg>
+    <span style="font-size: 11px; font-weight: 700; color: ${customChar.color}; background: ${customChar.shirt}; padding: 3px 10px; border-radius: 10px; margin-top: 2px;">
+      ${esc(careerName)}
+    </span>
   `;
 }
 
+window.previewCareerStickman = function (careerName) {
+  const box = document.getElementById('CareerStickmanBox');
+  if (box && CAREER_GEAR[careerName]) {
+    loginDraft.career = careerName;
+    box.innerHTML = renderCareerStickman(careerName);
+  }
+};
+
 function renderLogin() {
-  let headerSubtitle = 'Inicia sesión para continuar';
+  let headerSubtitle = loginStep === 1 ? 'Ingresa tus datos para comenzar' : 'Selecciona tu carrera';
   let bodyHtml = '';
 
-  if (authTab === 'login') {
-    headerSubtitle = 'Ingresa con tu cuenta';
+  if (loginStep === 1) {
     bodyHtml = `
-      <form id="login-form">
-        <label for="login-name" style="margin-top:4px;">Usuario</label>
-        <input id="login-name" name="name" maxlength="40" placeholder="Tu usuario" value="${esc(registerDraft.name)}" required>
+      <form id="login-step1-form" class="login-step-anim">
+        <label for="login-name" style="margin-top: 4px;">Nombre</label>
+        <input id="login-name" name="name" maxlength="40" placeholder="Tu nombre completo" value="${esc(loginDraft.name)}" required>
 
-        <label for="login-pass">Contraseña</label>
-        <input id="login-pass" type="password" name="password" placeholder="Tu contraseña" required>
+        <label for="login-uni">Universidad</label>
+        <select id="login-uni" name="university" required>
+          <option value="ESPOL" ${loginDraft.university === 'ESPOL' ? 'selected' : ''}>ESPOL</option>
+          <option value="Universidad Mayor" ${loginDraft.university === 'Universidad Mayor' ? 'selected' : ''}>Universidad Mayor</option>
+        </select>
 
-        <div id="login-error" class="feedback retry" style="display: none; margin-top: 10px;"></div>
-
-        <button class="btn primary full" type="submit" style="margin-top: 18px;">Iniciar sesión ${icon('arrow')}</button>
+        <button class="btn primary full" type="submit" style="margin-top: 22px;">
+          Siguiente ${icon('arrow')}
+        </button>
       </form>
+    `;
+  } else {
+    bodyHtml = `
+      <div class="login-step-anim">
+        <div id="CareerStickmanBox" class="stickman-center-box">
+          ${renderCareerStickman(loginDraft.career)}
+        </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line);">
-        <button type="button" class="btn outline full" data-action="auth-tab:register" style="margin:0; padding:10px; font-size:11.5px;">
-          Crear cuenta
-        </button>
-        <button type="button" class="btn outline full" data-action="auth-tab:guest" style="margin:0; padding:10px; font-size:11.5px;">
-          Modo invitado
-        </button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <span class="eyebrow" style="margin: 0; color: var(--blue);">ELIGE TU CARRERA</span>
+          <button type="button" class="text-link" data-action="login-back" style="font-size: 11px;">Volver</button>
+        </div>
+
+        <div class="career-table-wrap">
+          <table class="career-table">
+            <thead>
+              <tr>
+                <th>Carrera</th>
+                <th>Enfoque</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${CAREERS.map(c => {
+                const g = CAREER_GEAR[c];
+                return `
+                  <tr class="career-row" data-action="select-career:${esc(c)}"
+                      onmouseenter="window.previewCareerStickman('${esc(c)}')">
+                    <td>
+                      <span class="career-dot" style="background: ${g.color};"></span>
+                      <strong>${esc(c)}</strong>
+                    </td>
+                    <td>
+                      <span class="career-tag" style="background: ${g.shirt}; color: ${g.color};">${esc(g.tag)}</span>
+                    </td>
+                    <td style="text-align: right;">
+                      <span class="career-enter-label">Seleccionar</span>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
       </div>
     `;
-  } else if (authTab === 'register') {
-    headerSubtitle = 'Crea tu cuenta en un paso';
-    bodyHtml = `
-      <form id="register-step1-form">
-        <label for="reg-name" style="margin-top:4px;">Usuario</label>
-        <input id="reg-name" name="name" maxlength="40" placeholder="Elige un usuario" value="${esc(registerDraft.name)}" required>
-
-        <label for="reg-pass">Contraseña</label>
-        <input id="reg-pass" type="password" name="password" placeholder="Crea una contraseña" value="${esc(registerDraft.password)}" required>
-
-        <button class="btn primary full" type="submit" style="margin-top: 18px;">Crear cuenta ${icon('arrow')}</button>
-      </form>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line);">
-        <button type="button" class="btn outline full" data-action="auth-tab:login" style="margin:0; padding:10px; font-size:11.5px;">
-          Iniciar sesión
-        </button>
-        <button type="button" class="btn outline full" data-action="auth-tab:guest" style="margin:0; padding:10px; font-size:11.5px;">
-          Modo invitado
-        </button>
-      </div>
-    `;
-  } else if (authTab === 'guest') {
-    headerSubtitle = 'Acceso rápido como invitado';
-    bodyHtml = `
-      <form id="guest-form">
-        <label for="guest-name" style="margin-top:4px;">Tu nombre</label>
-        <input id="guest-name" name="name" maxlength="40" placeholder="Ej. Jorge" value="${esc(registerDraft.name)}" required>
-
-        <button class="btn primary full" type="submit" style="margin-top: 18px;">Continuar ${icon('arrow')}</button>
-      </form>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line);">
-        <button type="button" class="btn outline full" data-action="auth-tab:login" style="margin:0; padding:10px; font-size:11.5px;">
-          Iniciar sesión
-        </button>
-        <button type="button" class="btn outline full" data-action="auth-tab:register" style="margin:0; padding:10px; font-size:11.5px;">
-          Crear cuenta
-        </button>
-      </div>
-    `;
-  } else if (authTab === 'onboarding') {
-    headerSubtitle = 'Calibrando tu perfil interactivo';
-
-    if (registerStep === 1) {
-      bodyHtml = `
-        <div class="quiz-step-anim">
-          ${renderQuizInteractiveStage()}
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <span class="eyebrow" style="margin:0; color:var(--blue);">ELIGE TU EQUIPAMIENTO INICIAL</span>
-            <button type="button" class="text-link" data-action="auth-tab:login" style="font-size:11px;">← Salir</button>
-          </div>
-
-          <strong style="font-size:14px; color:#202a3d; display:block; margin-bottom:10px;">¿Cuál es tu área o carrera?</strong>
-          <div style="display:grid; gap:7px;">
-            ${CAREERS.map(c => {
-              const g = CAREER_GEAR[c];
-              const b0 = Math.round((g.stats[0] - 60) * 0.5);
-              const b1 = Math.round((g.stats[1] - 60) * 0.5);
-              const b2 = Math.round((g.stats[2] - 60) * 0.5);
-              return `
-                <button type="button" class="quiz-interactive-card" data-action="pick-career:${esc(c)}"
-                  onmouseenter="window.previewQuizBoost(${b0},${b1},${b2},'${esc(c)}')"
-                  onmouseleave="window.resetQuizPreview()">
-                  <span style="display:flex; align-items:center; gap:9px;">
-                    <span style="width:10px; height:10px; border-radius:50%; background:${g.color}; flex-shrink:0;"></span>
-                    <span style="font-weight:650; color:#202a3d;">${esc(c)}</span>
-                  </span>
-                  <span class="quiz-card-tag" style="background:${g.shirt}; color:${g.color};">${esc(g.tag)}</span>
-                </button>
-              `;
-            }).join('')}
-          </div>
-        </div>
-      `;
-    } else if (registerStep >= 2 && registerStep <= 4) {
-      const qIndex = registerStep - 2;
-      const q = AI_QUIZ_QUESTIONS[qIndex];
-      bodyHtml = `
-        <div class="quiz-step-anim">
-          ${renderQuizInteractiveStage()}
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span class="eyebrow" style="margin:0; color:var(--blue);">${esc(q.scenario)}</span>
-            <button type="button" class="text-link" data-action="wiz-back" style="font-size:11px;">← Anterior</button>
-          </div>
-
-          <div class="quiz-prompt-bubble">
-            «${esc(q.q)}»
-          </div>
-
-          <div style="display:grid; gap:8px; margin-top:10px;">
-            ${q.options.map(opt => {
-              const [b0, b1, b2] = opt.boost || [20, 20, 20];
-              return `
-                <button type="button" class="quiz-interactive-card" data-action="quiz-step:${q.id}:${opt.id}"
-                  onmouseenter="window.previewQuizBoost(${b0},${b1},${b2})"
-                  onmouseleave="window.resetQuizPreview()">
-                  <span style="font-weight:650; color:#202a3d;">${esc(opt.title)}</span>
-                  <span class="quiz-card-tag">${esc(opt.tag)}</span>
-                </button>
-              `;
-            }).join('')}
-          </div>
-        </div>
-      `;
-    } else {
-      const profileSummary = buildAiProfile(registerDraft.quizAnswers);
-      bodyHtml = `
-        <div class="quiz-step-anim" style="text-align:center;">
-          ${renderQuizInteractiveStage()}
-          <span class="eyebrow" style="color:#2e7d47; margin-bottom:4px;">CALIBRACIÓN COMPLETADA</span>
-          <h3 style="margin:0 0 6px 0; font-size:19px; color:#202a3d;">Personalización activada</h3>
-          <p style="font-size:12px; color:#535e74; margin:0 0 14px 0;">
-            <strong>${esc(registerDraft.name)}</strong> · ${esc(registerDraft.career)}
-          </p>
-
-          <div style="background:#eef8f0; border:1px solid #b7e1c1; border-radius:11px; padding:10px 14px; margin-bottom:16px; font-size:11.5px; color:#1f5432;">
-            ${esc(profileSummary.summary)}
-          </div>
-
-          <button type="button" class="btn primary full" data-action="finish-onboarding" style="margin:0;">
-            Entrar a Sync ${icon('arrow')}
-          </button>
-          <button type="button" class="text-link" data-action="wiz-back" style="margin-top:10px; font-size:11px;">← Repetir quiz</button>
-        </div>
-      `;
-    }
   }
 
   $('#app').innerHTML = `
     <style>
-      .quiz-stage-card {
-        display: grid;
-        grid-template-columns: 108px 1fr;
-        gap: 12px;
-        align-items: center;
-        background: linear-gradient(135deg, #f0f4ff 0%, #f8f9fc 100%);
-        border: 1px solid #d8e2fc;
-        border-radius: 14px;
-        padding: 10px 14px;
-        margin-bottom: 14px;
-        text-align: left;
+      .login-step-anim {
+        animation: loginFadeIn 0.22s ease-out;
       }
-      .quiz-avatar-col {
+      @keyframes loginFadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .stickman-center-box {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        background: linear-gradient(135deg, #f0f4ff 0%, #f8f9fc 100%);
+        border: 1px solid #d8e2fc;
+        border-radius: 14px;
+        padding: 14px 16px 12px;
+        margin-bottom: 16px;
+        text-align: center;
       }
-      .quiz-stat-row { margin-bottom: 7px; }
-      .quiz-stat-head {
-        display: flex;
-        justify-content: space-between;
-        font-size: 10px;
-        font-weight: 600;
-        color: #535e74;
-        margin-bottom: 3px;
+      .career-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid #e2e7f1;
+        border-radius: 12px;
       }
-      .quiz-stat-track {
-        height: 6px;
-        background: #e2e8f0;
-        border-radius: 6px;
-        overflow: hidden;
-      }
-      .quiz-stat-track span {
-        display: block;
-        height: 100%;
-        border-radius: 6px;
-        transition: width 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
-      }
-      .quiz-prompt-bubble {
-        background: #f8f9fc;
-        border-left: 3px solid var(--blue);
-        padding: 9px 12px;
-        border-radius: 0 10px 10px 0;
-        font-size: 13px;
-        font-weight: 650;
-        color: #202a3d;
-        text-align: left;
-      }
-      .quiz-interactive-card {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        text-align: left;
-        padding: 11px 13px;
-        border-radius: 11px;
-        border: 1.5px solid #e2e7f1;
-        background: white;
+      .career-table {
+        width: 100%;
+        border-collapse: collapse;
         font-size: 12px;
-        cursor: pointer;
-        transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+        text-align: left;
       }
-      .quiz-interactive-card:hover {
-        border-color: var(--blue);
-        background: #f4f7ff;
-        transform: translateX(4px);
-        box-shadow: 0 6px 16px rgba(54, 92, 245, 0.1);
-      }
-      .quiz-card-tag {
-        font-size: 9.5px;
+      .career-table thead th {
+        background: #f8f9fc;
+        color: #727b8d;
+        font-size: 10px;
         font-weight: 700;
-        color: var(--blue);
-        background: #edf2ff;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        padding: 9px 12px;
+        border-bottom: 1px solid #e2e7f1;
+      }
+      .career-row {
+        cursor: pointer;
+        border-bottom: 1px solid #eef1f7;
+        transition: background 0.15s ease;
+      }
+      .career-row:last-child {
+        border-bottom: none;
+      }
+      .career-row:hover {
+        background: #f0f4ff;
+      }
+      .career-row td {
+        padding: 11px 12px;
+        vertical-align: middle;
+        color: #202a3d;
+      }
+      .career-dot {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        margin-right: 8px;
+        vertical-align: middle;
+      }
+      .career-tag {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
         padding: 3px 8px;
         border-radius: 8px;
         white-space: nowrap;
-        flex-shrink: 0;
       }
-      .quiz-step-anim {
-        animation: quizSlideIn 0.24s ease-out;
+      .career-enter-label {
+        font-size: 11px;
+        font-weight: 650;
+        color: var(--blue);
       }
-      @keyframes quizSlideIn {
-        from { opacity: 0; transform: translateY(8px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      #QuizMiniActor .shoulder-front {
+      #CareerMiniActor .shoulder-front {
         transform-origin: 0px 0px;
-        animation: quizIdleArm 1.4s ease-in-out infinite alternate;
+        animation: careerIdleArm 1.4s ease-in-out infinite alternate;
       }
-      #QuizMiniActor .elbow-front {
+      #CareerMiniActor .elbow-front {
         transform-origin: 0px 0px;
-        animation: quizIdleElbow 1.1s ease-in-out infinite alternate;
+        animation: careerIdleElbow 1.1s ease-in-out infinite alternate;
       }
-      #QuizMiniActor.quiz-actor-wave .shoulder-front {
-        animation: quizWaveArm 0.35s ease-in-out infinite alternate !important;
-      }
-      @keyframes quizIdleArm {
+      @keyframes careerIdleArm {
         0% { transform: translate(5px, 28px) rotate(-6deg); }
         100% { transform: translate(5px, 28px) rotate(10deg); }
       }
-      @keyframes quizIdleElbow {
+      @keyframes careerIdleElbow {
         0% { transform: translate(13px, 19px) rotate(-18deg); }
         100% { transform: translate(13px, 19px) rotate(12deg); }
       }
-      @keyframes quizWaveArm {
-        0% { transform: translate(5px, 28px) rotate(-45deg); }
-        100% { transform: translate(5px, 28px) rotate(-75deg); }
-      }
-      @media (max-width: 440px) {
-        .quiz-stage-card {
-          grid-template-columns: 88px 1fr;
-          gap: 10px;
-          padding: 9px 10px;
-        }
-        .quiz-interactive-card {
-          padding: 10px 11px;
-          font-size: 11.5px;
+      @media (max-width: 520px) {
+        .career-table thead th:nth-child(2),
+        .career-row td:nth-child(2) {
+          display: none;
         }
       }
     </style>
+
     <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f8f9fc; padding: 24px 16px;">
-      <div style="background: white; padding: 28px 26px; border-radius: 20px; box-shadow: 0 12px 38px rgba(24,39,75,0.05); width: 100%; max-width: ${authTab === 'onboarding' ? '440px' : '400px'}; border: 1px solid var(--line); transition: max-width 0.2s;">
-        <div style="text-align: center; margin-bottom: 16px;">
+      <div style="background: white; padding: 28px 26px; border-radius: 20px; box-shadow: 0 12px 38px rgba(24,39,75,0.05); width: 100%; max-width: ${loginStep === 2 ? '580px' : '400px'}; border: 1px solid var(--line); transition: max-width 0.2s;">
+        <div style="text-align: center; margin-bottom: 18px;">
           <div style="font-size: 30px; font-weight: 750; letter-spacing: -1.5px; color: var(--blue); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 4px;">
             <span class="brand-symbol" style="width:30px; height:30px; font-size:20px; line-height:30px; border-radius:8px; margin-right:8px; padding:0;">s</span>sync<span class="brand-dot">.</span>
           </div>
@@ -2109,7 +1625,7 @@ function home() {
       .features-grid, .credits-grid { grid-template-columns: 1fr; gap: 16px; margin-top: 24px; }
       .feature-card, .institution-card { padding: 22px 18px; }
       .backing-section { margin-top: 38px; }
-      .backing-logos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .backing-logos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
       .backing-logo-card { min-width: 0; height: 58px; padding: 8px 10px; border-radius: 11px; }
       .backing-logo-card img { max-height: 32px; }
     }
@@ -2135,37 +1651,32 @@ function home() {
     </div>
   </section>
 
+
   <section class="features-section">
      <div class="eyebrow" style="color: var(--blue); margin-bottom: 8px;">CÓMO FUNCIONA SYNC</div>
      <h2 style="font-size: clamp(22px, 3vw, 30px); color: #202a3d; max-width: 560px; text-align: center; line-height: 1.28;">Tu puente entre la universidad y el trabajo</h2>
 
      <div class="features-grid">
-       <div class="feature-card" style="cursor:pointer;" onclick="location.hash='mentor'">
+       <div class="feature-card">
          <div class="feature-icon-wrapper icon-blue">${icon('spark')}</div>
          <h3 style="font-size: 18px; color: #202a3d; margin-bottom: 8px;">Mentor Sync</h3>
-         <p style="font-size: 13px; color: #535e74; line-height: 1.55; margin: 0;">IA con semáforo de riesgo, imágenes técnicas Full HD y citas directas al pasar el cursor.</p>
+         <p style="font-size: 13px; color: #535e74; line-height: 1.55; margin: 0;">IA que te ayuda a dominar conceptos con un semáforo que mide la profundidad de cada respuesta.</p>
          <div class="traffic-lights">
            <span class="t-light t-red"></span><span class="t-light t-yellow"></span><span class="t-light t-green"></span>
-           <span style="margin-left: 4px;">Riesgo · Contrastar · Seguro</span>
+           <span style="margin-left: 4px;">Superficial · Intermedio · Completo</span>
          </div>
        </div>
 
-       <div class="feature-card" style="cursor:pointer;" onclick="location.hash='skills'">
+       <div class="feature-card">
          <div class="feature-icon-wrapper icon-orange">${icon('briefcase')}</div>
          <h3 style="font-size: 18px; color: #202a3d; margin-bottom: 8px;">Habilidades blandas</h3>
-         <p style="font-size: 13px; color: #535e74; line-height: 1.55; margin: 0;">Historias interactivas de 3 actos con voz, personajes que entran en escena y 4 desenlaces.</p>
-         <div class="traffic-lights" style="color:#b45309; background:#fef3c7;">
-           <span>🎭 3 Actos · 4 Finales distintos</span>
-         </div>
+         <p style="font-size: 13px; color: #535e74; line-height: 1.55; margin: 0;">Simulador de situaciones laborales donde debes evaluar el contexto y tomar decisiones.</p>
        </div>
 
-       <div class="feature-card" style="cursor:pointer;" onclick="location.hash='projects'">
+       <div class="feature-card">
          <div class="feature-icon-wrapper icon-green">${icon('user')}</div>
          <h3 style="font-size: 18px; color: #202a3d; margin-bottom: 8px;">Proyectos Colaborativos</h3>
-         <p style="font-size: 13px; color: #535e74; line-height: 1.55; margin: 0;">Únete a un equipo, completa los 4 entregables reales y desbloquea insignias en tu perfil.</p>
-         <div class="traffic-lights" style="color:#1f683c; background:#eaf6ee;">
-           <span>🏆 Retos guiados + Insignias</span>
-         </div>
+         <p style="font-size: 13px; color: #535e74; line-height: 1.55; margin: 0;">Explora un catálogo amplio de proyectos disponibles, elige uno o dos de tu interés y participa activamente junto a otros estudiantes de tu universidad.</p>
        </div>
      </div>
 
@@ -2173,17 +1684,15 @@ function home() {
        <span class="eyebrow" style="margin-bottom: 6px; color: #8a93a8;">CON EL RESPALDO DE</span>
        <div class="backing-logos">
          <div class="backing-logo-card">
-           <img src="/img/Espol.png" alt="Logo ESPOL">
-         </div>
-         <div class="backing-logo-card">
            <img src="/img/I3Lab.png" alt="Logo i3lab">
          </div>
          <div class="backing-logo-card">
-           <img src="/img/UMayor.png" alt="Logo Universidad Mayor">
+           <img src="/img/DSchool.png" alt="Logo d.school">
          </div>
        </div>
      </div>
   </section>
+
 
   <section class="credits-section">
     <div class="eyebrow" style="margin-bottom: 8px;">COLABORACIÓN ACADÉMICA</div>
@@ -2219,94 +1728,41 @@ function home() {
 }
 
 // 8. VISTA 1: MENTOR SYNC (CITA SUBRAYADA LIMPIA SIN REPETICIÓN + IMAGEN FULL HD CON FUENTE)
-function renderCitedParagraph(p, sources) {
-  const src = (sources || []).find(s => s.id === p.citeId);
-  if (!src) return `<p style="margin: 0 0 10px 0; line-height: 1.62;">${esc(p.text)}</p>`;
-  return `
-    <p style="margin: 0 0 11px 0; line-height: 1.68;">
-      <a href="${esc(src.url)}" target="_blank" rel="noopener noreferrer" class="cited-claim">
-        ${esc(p.text)}
-        <span class="cite-popover" role="tooltip">
-          <span class="cite-popover-head">
-            <strong>📄 ${esc(src.title)}</strong>
-            <span class="cite-domain">${esc(src.domain)} ↗</span>
-          </span>
-          <span class="cite-popover-quote">${esc(src.quote)}</span>
-          <span class="cite-popover-foot">Haz clic en el texto subrayado para abrir la fuente oficial</span>
-        </span>
-      </a>
-    </p>
-  `;
-}
-
 function viewMentorSync() {
+  const lastMsg = demoChat.length > 0 ? demoChat[demoChat.length - 1] : null;
+  const activeColor = lastMsg ? lastMsg.color : 'none';
+
+  const depthInfo = {
+    none: {
+      title: 'En espera',
+      desc: 'Selecciona una consulta para medir la profundidad de la respuesta.'
+    },
+    red: {
+      title: 'Nivel Superficial',
+      desc: 'Respuesta breve y general. Aún hay mucho por profundizar en este tema.'
+    },
+    amber: {
+      title: 'Nivel Intermedio',
+      desc: 'Explica las etapas principales, pero todavía existen detalles más avanzados.'
+    },
+    green: {
+      title: 'Nivel Completo',
+      desc: 'Cobertura profunda del tema. No hace falta profundizar más para dominarlo.'
+    }
+  }[activeColor];
+
   return `
   <style>
-    .cited-claim {
-      position: relative;
-      display: inline;
-      color: #1f2d47;
-      background: linear-gradient(transparent 72%, #dbe7ff 72%);
-      border-bottom: 1.5px dashed #365cf5;
-      padding: 0 2px 1px;
-      border-radius: 3px;
-      text-decoration: none;
-      transition: background 0.15s, color 0.15s;
-      cursor: pointer;
+    .mentor-page-wrap {
+      width: 100%;
+      padding: 32px 5% 56px;
     }
-    .cited-claim:hover, .cited-claim:focus-visible {
-      background: #d4e2ff;
-      color: #112358;
+    .mentor-split-layout {
+      display: grid;
+      grid-template-columns: 7fr 2fr;
+      gap: 24px;
+      align-items: start;
     }
-    .cite-popover {
-      visibility: hidden;
-      opacity: 0;
-      pointer-events: none;
-      position: absolute;
-      left: 0;
-      bottom: calc(100% + 8px);
-      width: min(350px, 82vw);
-      background: #1b253b;
-      color: #ffffff;
-      border-radius: 12px;
-      padding: 12px 14px;
-      box-shadow: 0 14px 32px rgba(15, 23, 42, 0.28);
-      z-index: 60;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      text-align: left;
-      line-height: 1.44;
-      transform: translateY(4px);
-      transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
-    }
-    .cited-claim:hover .cite-popover,
-    .cited-claim:focus-visible .cite-popover {
-      visibility: visible;
-      opacity: 1;
-      transform: translateY(0);
-    }
-    .cite-popover-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 8px;
-      font-size: 10.5px;
-      border-bottom: 1px solid rgba(255,255,255,0.12);
-      padding-bottom: 5px;
-    }
-    .cite-popover-head strong { color: #9ec0ff; font-weight: 650; }
-    .cite-domain {
-      background: rgba(255,255,255,0.14);
-      color: #e2e8f0;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 9px;
-      white-space: nowrap;
-    }
-    .cite-popover-quote { font-size: 10.5px; color: #f1f5f9; font-style: italic; }
-    .cite-popover-foot { font-size: 9.5px; color: #93c5fd; font-weight: 600; }
-
     .mentor-reply-split {
       display: flex;
       align-items: flex-start;
@@ -2316,172 +1772,234 @@ function viewMentorSync() {
       flex: 1;
       min-width: 0;
     }
-    .mentor-hd-card {
-      width: 245px;
+    .mentor-img-card {
+      width: 230px;
       flex-shrink: 0;
       border-radius: 12px;
       overflow: hidden;
       border: 1px solid #dce4f5;
       background: #ffffff;
       box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
-      text-decoration: none;
-      display: block;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    .mentor-hd-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(54, 92, 245, 0.12);
-      border-color: #b8caf8;
-    }
-    .mentor-hd-img-wrap {
-      position: relative;
+    .mentor-img-wrap {
       height: 138px;
       background: #0f172a;
       overflow: hidden;
     }
-    .mentor-hd-img-wrap img {
+    .mentor-img-wrap img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
-      transition: transform 0.35s ease;
     }
-    .mentor-hd-card:hover .mentor-hd-img-wrap img {
-      transform: scale(1.03);
-    }
-    .mentor-hd-badge {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: rgba(15, 23, 42, 0.78);
-      backdrop-filter: blur(4px);
-      color: #ffffff;
-      font-size: 9px;
-      font-weight: 700;
-      padding: 2.5px 7px;
-      border-radius: 5px;
-      letter-spacing: 0.4px;
-    }
-    .mentor-hd-caption {
+    .mentor-img-caption {
       padding: 8px 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
       font-size: 10.5px;
       line-height: 1.35;
       color: #475569;
       background: #ffffff;
     }
-    .mentor-hd-source {
-      color: var(--blue);
-      font-weight: 650;
-      font-size: 10px;
+    .traffic-panel {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px 18px;
+      box-shadow: 0 8px 26px rgba(0, 0, 0, 0.03);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: sticky;
+      top: 96px;
+    }
+    .traffic-housing {
+      background: #1e293b;
+      border: 4px solid #334155;
+      border-radius: 28px;
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin: 14px 0 16px;
+      box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.45);
+    }
+    .traffic-bulb {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      transition: background 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease;
+    }
+    .bulb-red {
+      background: #451a1a;
+      opacity: 0.35;
+    }
+    .bulb-red.on {
+      background: #ef4444;
+      opacity: 1;
+      box-shadow: 0 0 22px rgba(239, 68, 68, 0.75);
+    }
+    .bulb-amber {
+      background: #453512;
+      opacity: 0.35;
+    }
+    .bulb-amber.on {
+      background: #f59e0b;
+      opacity: 1;
+      box-shadow: 0 0 22px rgba(245, 158, 11, 0.75);
+    }
+    .bulb-green {
+      background: #123c26;
+      opacity: 0.35;
+    }
+    .bulb-green.on {
+      background: #22c55e;
+      opacity: 1;
+      box-shadow: 0 0 22px rgba(34, 197, 94, 0.75);
+    }
+    .traffic-status-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #202a3d;
+      margin-bottom: 6px;
+    }
+    .traffic-status-desc {
+      font-size: 11.5px;
+      line-height: 1.45;
+      color: #64748b;
+      margin: 0;
+    }
+    .traffic-help-box {
+      margin-top: 14px;
+      padding: 12px 13px;
+      background: #eef8f0;
+      border: 1px solid #b7e1c1;
+      border-radius: 12px;
+      text-align: left;
+    }
+    .traffic-help-box strong {
+      display: block;
+      font-size: 11px;
+      color: #1f5432;
+      margin-bottom: 4px;
+    }
+    .traffic-help-box p {
+      margin: 0;
+      font-size: 11px;
+      line-height: 1.48;
+      color: #2d6840;
+    }
+    @media (max-width: 860px) {
+      .mentor-split-layout {
+        grid-template-columns: 1fr;
+      }
+      .traffic-panel {
+        position: static;
+      }
+      .traffic-housing {
+        flex-direction: row;
+        padding: 12px 18px;
+      }
+      .traffic-bulb {
+        width: 40px;
+        height: 40px;
+      }
     }
     @media (max-width: 640px) {
       .mentor-reply-split {
         flex-direction: column;
         gap: 10px;
       }
-      .mentor-hd-card {
+      .mentor-img-card {
         width: 100%;
       }
-      .mentor-hd-img-wrap {
+      .mentor-img-wrap {
         height: 150px;
-      }
-      .cite-popover {
-        position: fixed;
-        left: 14px;
-        right: 14px;
-        bottom: 16px;
-        width: auto;
-        z-index: 200;
       }
       #messages {
         padding: 16px 12px !important;
-        max-height: 56vh !important;
+        max-height: 54vh !important;
       }
     }
   </style>
 
-  <div class="sim-container">
-     <div style="text-align: center; margin-bottom: 20px;">
-        <h2 style="font-size: 24px; color: #202a3d; margin-bottom: 6px;">Mentor Sync</h2>
-        <p style="color: #727b8d; font-size: 13px; max-width: 560px; margin: 0 auto;">
-          Pasa el cursor sobre el texto subrayado para inspeccionar la cita oficial o haz clic para abrir el documento original.
-        </p>
+  <div class="mentor-page-wrap">
+     <div style="text-align: center; margin-bottom: 22px;">
+        <h2 style="font-size: 24px; color: #202a3d; margin-bottom: 4px;">Mentor Sync</h2>
      </div>
 
-     <div class="chat-panel" style="max-width: 860px; margin: 0 auto; background: white; border-radius: 18px; border: 1px solid var(--line); min-height: 510px; display: flex; flex-direction: column; box-shadow: 0 8px 26px rgba(0,0,0,0.03); overflow: visible;">
-        <div id="messages" style="flex: 1; max-height: 470px; padding: 24px; overflow-y: auto; scroll-behavior: smooth;">
-           <div style="display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px;">
-              <span style="background: #edf1ff; color: var(--blue); width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-style: italic; flex-shrink:0;">s</span>
-              <div style="background: #f8f9fc; padding: 13px 16px; border-radius: 0 12px 12px 12px; font-size: 13px; color: #3c4963; max-width: 85%; border: 1px solid var(--line);">
-                 👋 Hola, <strong>${esc(state.name.split(' ')[0])}</strong>. Selecciona una consulta abajo: cada afirmación subrayada incluye su referencia directa y apoyo visual Full HD a la derecha.
-              </div>
-           </div>
-
-           ${demoChat.map((m, idx) => {
-             const dotColor = m.color === 'red' ? '#dc8b85' : m.color === 'amber' ? '#d8b55f' : '#85ac92';
-             const statusBg = m.color === 'red' ? '#fdf2f1' : m.color === 'amber' ? '#fef9e7' : '#eef8f0';
-             const statusText = m.color === 'red' ? '#9e3f38' : m.color === 'amber' ? '#8a6818' : '#2d6840';
-             return `
-             <div style="display: flex; gap: 12px; align-items: flex-start; justify-content: flex-end; margin-bottom: 14px;">
-                <div style="background: var(--blue); color: white; padding: 11px 16px; border-radius: 12px 0 12px 12px; font-size: 12.5px; max-width: 80%; line-height: 1.45;">
-                   ${esc(m.q)}
-                </div>
-             </div>
-             <div style="display: flex; gap: 12px; align-items: flex-start; margin-bottom: 22px;">
+     <div class="mentor-split-layout">
+       <div class="chat-panel" style="background: white; border-radius: 18px; border: 1px solid var(--line); min-height: 510px; display: flex; flex-direction: column; box-shadow: 0 8px 26px rgba(0,0,0,0.03); overflow: hidden;">
+          <div id="messages" style="flex: 1; max-height: 470px; padding: 24px; overflow-y: auto; scroll-behavior: smooth;">
+             <div style="display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px;">
                 <span style="background: #edf1ff; color: var(--blue); width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-style: italic; flex-shrink:0;">s</span>
-                <div style="background: #f8f9fc; padding: 16px 18px; border-radius: 0 14px 14px 14px; font-size: 12.5px; color: #3c4963; max-width: 92%; border: 1px solid var(--line); width: 100%;">
-                   <div class="mentor-reply-split">
-                     <div class="mentor-reply-text">
-                       <p style="margin: 0 0 8px 0; font-weight: 650; color: #202a3d;">${esc(m.intro)}</p>
-                       ${(m.paragraphs || []).map(p => renderCitedParagraph(p, m.sources)).join('')}
-                     </div>
-
-                     ${m.image ? `
-                       <a class="mentor-hd-card" href="${esc(m.imageSourceUrl || m.sources?.[0]?.url || '#')}" target="_blank" rel="noopener noreferrer" title="Abrir fuente oficial">
-                         <div class="mentor-hd-img-wrap">
-                           <img src="${esc(m.image)}" alt="${esc(m.imageCaption || m.intro)}">
-                           <span class="mentor-hd-badge">📸 FULL HD</span>
-                         </div>
-                         <div class="mentor-hd-caption">
-                           <span>${esc(m.imageCaption || '')}</span>
-                           <span class="mentor-hd-source">Fuente: ${esc(m.imageSourceTag || 'Documentación oficial')} ↗</span>
-                         </div>
-                       </a>
-                     ` : ''}
-                   </div>
-
-                   <div style="margin-top: 12px; padding: 8px 12px; border-radius: 9px; background: ${statusBg}; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;">
-                      <div style="display: flex; align-items: center; gap: 7px;">
-                        <span style="width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: ${dotColor}; flex-shrink:0;"></span>
-                        <span style="font-size: 11px; font-weight: 650; color: ${statusText};">${esc(m.statusLabel)}</span>
-                      </div>
-                      ${m.color === 'amber' ? `
-                        <button type="button" class="btn outline" data-action="verify-amber:${idx}" style="padding: 4px 9px; font-size: 10px; border-color: #85ac92; color: #2d6840; background: white;">
-                          ✓ Marcar verificado
-                        </button>
-                      ` : ''}
-                   </div>
+                <div style="background: #f8f9fc; padding: 13px 16px; border-radius: 0 12px 12px 12px; font-size: 13px; color: #3c4963; max-width: 85%; border: 1px solid var(--line);">
+                   👋 Hola, <strong>${esc(state.name.split(' ')[0])}</strong>. Selecciona una consulta abajo y observa en el semáforo de la derecha qué tan profunda es la respuesta.
                 </div>
              </div>
-           `}).join('')}
-        </div>
 
-        <div style="padding: 15px 20px; border-top: 1px solid var(--line); background: white; border-radius: 0 0 18px 18px;">
-           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 9px;">
-             <span style="font-size: 9.5px; font-weight: 700; letter-spacing: 0.8px; color: #8a93a8;">CONSULTAS DE PRUEBA</span>
-             ${demoChat.length > 0 ? `<button type="button" class="text-link" data-action="clear-chat" style="font-size:10.5px;">Limpiar historial</button>` : ''}
+             ${demoChat.map(m => `
+               <div style="display: flex; gap: 12px; align-items: flex-start; justify-content: flex-end; margin-bottom: 14px;">
+                  <div style="background: var(--blue); color: white; padding: 11px 16px; border-radius: 12px 0 12px 12px; font-size: 12.5px; max-width: 80%; line-height: 1.45;">
+                     ${esc(m.q)}
+                  </div>
+               </div>
+               <div style="display: flex; gap: 12px; align-items: flex-start; margin-bottom: 22px;">
+                  <span style="background: #edf1ff; color: var(--blue); width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-style: italic; flex-shrink:0;">s</span>
+                  <div style="background: #f8f9fc; padding: 16px 18px; border-radius: 0 14px 14px 14px; font-size: 12.5px; color: #3c4963; max-width: 92%; border: 1px solid var(--line); width: 100%;">
+                     <div class="mentor-reply-split">
+                       <div class="mentor-reply-text">
+                         <p style="margin: 0 0 8px 0; font-weight: 650; color: #202a3d;">${esc(m.intro)}</p>
+                         ${(m.paragraphs || []).map(text => `<p style="margin: 0 0 10px 0; line-height: 1.62;">${esc(text)}</p>`).join('')}
+                       </div>
+
+                       ${m.image ? `
+                         <div class="mentor-img-card">
+                           <div class="mentor-img-wrap">
+                             <img src="${esc(m.image)}" alt="${esc(m.imageCaption || m.intro)}">
+                           </div>
+                           <div class="mentor-img-caption">
+                             ${esc(m.imageCaption || '')}
+                           </div>
+                         </div>
+                       ` : ''}
+                     </div>
+                  </div>
+               </div>
+             `).join('')}
+          </div>
+
+          <div style="padding: 15px 20px; border-top: 1px solid var(--line); background: white;">
+             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 9px;">
+               <span style="font-size: 9.5px; font-weight: 700; letter-spacing: 0.8px; color: #8a93a8;">CONSULTAS DE PRUEBA</span>
+               ${demoChat.length > 0 ? `<button type="button" class="text-link" data-action="clear-chat" style="font-size:10.5px;">Limpiar historial</button>` : ''}
+             </div>
+             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 8px;">
+                ${MENTOR_SCENARIOS.map(sc => `
+                  <button type="button" class="btn outline" data-action="demo-chat:${sc.id}" style="font-size: 11.5px; padding: 10px 12px; text-align: left; justify-content: flex-start; border-color: ${sc.borderColor}; background: ${sc.badgeBg}; color: #202a3d;">
+                    ${esc(sc.btnLabel)}
+                  </button>
+                `).join('')}
+             </div>
+          </div>
+       </div>
+
+       <aside class="traffic-panel" aria-label="Semáforo de profundidad">
+         <span class="eyebrow" style="margin: 0; color: var(--blue);">PROFUNDIDAD</span>
+         <div class="traffic-housing">
+           <div class="traffic-bulb bulb-red ${activeColor === 'red' ? 'on' : ''}" title="Superficial"></div>
+           <div class="traffic-bulb bulb-amber ${activeColor === 'amber' ? 'on' : ''}" title="Intermedio"></div>
+           <div class="traffic-bulb bulb-green ${activeColor === 'green' ? 'on' : ''}" title="Completo"></div>
+         </div>
+         <div class="traffic-status-title">${esc(depthInfo.title)}</div>
+         <p class="traffic-status-desc">${esc(depthInfo.desc)}</p>
+
+         ${activeColor === 'green' ? `
+           <div class="traffic-help-box">
+             <strong>Consejo de estudio</strong>
+             <p>Aunque el tema ya está cubierto a profundidad, es probable que incluya términos muy técnicos. Puedes consultarle a Mentor Sync el significado de cada tecnicismo para terminar de dominar el concepto.</p>
            </div>
-           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 8px;">
-              ${MENTOR_SCENARIOS.map(sc => `
-                <button type="button" class="btn outline" data-action="demo-chat:${sc.id}" style="font-size: 11px; padding: 9px 11px; text-align: left; justify-content: flex-start; border-color: ${sc.borderColor}; background: ${sc.badgeBg}; color: #202a3d;">
-                  ${esc(sc.btnLabel)}
-                </button>
-              `).join('')}
-           </div>
-        </div>
+         ` : ''}
+       </aside>
      </div>
   </div>
   `;
@@ -2515,6 +2033,35 @@ function renderCharacterHairAndHat(char) {
 }
 
 function renderCharacterProp(char) {
+  if (char.prop === 'laptop') {
+    return `
+      <g transform="translate(4, 10) rotate(-8)">
+        <rect x="-10" y="-12" width="18" height="12" rx="1.8" fill="#1e293b" stroke="#7c3aed" stroke-width="1.8"/>
+        <rect x="-8" y="-10" width="14" height="8" rx="1" fill="#e9d5ff"/>
+        <line x1="-12" y1="1" x2="10" y2="1" stroke="#475569" stroke-width="3" stroke-linecap="round"/>
+      </g>
+    `;
+  }
+  if (char.prop === 'briefcase') {
+    return `
+      <g transform="translate(2, 16)">
+        <rect x="-9" y="-6" width="18" height="13" rx="2" fill="#0284c7" stroke="#0c4a6e" stroke-width="1.6"/>
+        <path d="M-4 -6 L-4 -9 L4 -9 L4 -6" fill="none" stroke="#0c4a6e" stroke-width="1.8"/>
+        <line x1="-9" y1="0" x2="9" y2="0" stroke="#bae6fd" stroke-width="1.4"/>
+      </g>
+    `;
+  }
+  if (char.prop === 'palette') {
+    return `
+      <g transform="translate(2, 15)">
+        <ellipse cx="0" cy="0" rx="10" ry="7.5" fill="#fef3c7" stroke="#059669" stroke-width="1.8"/>
+        <circle cx="-4" cy="-2" r="1.6" fill="#ef4444"/>
+        <circle cx="1" cy="-3" r="1.6" fill="#3b82f6"/>
+        <circle cx="5" cy="0" r="1.6" fill="#f59e0b"/>
+        <circle cx="-2" cy="3" r="1.8" fill="#ffffff" stroke="#059669" stroke-width="1"/>
+      </g>
+    `;
+  }
   if (char.prop === 'coffee') {
     return `
       <g transform="translate(0, 16)">
@@ -2527,9 +2074,9 @@ function renderCharacterProp(char) {
   if (char.prop === 'clipboard') {
     return `
       <g transform="translate(0, 16) rotate(-10)">
-        <rect x="-6" y="-7" width="13" height="18" rx="2" fill="#f5d0fe" stroke="#7c3aed" stroke-width="1.8"/>
-        <line x1="-3" y1="-2" x2="3" y2="-2" stroke="#7c3aed" stroke-width="1.6"/>
-        <line x1="-3" y1="3" x2="3" y2="3" stroke="#7c3aed" stroke-width="1.6"/>
+        <rect x="-6" y="-7" width="13" height="18" rx="2" fill="#fee2e2" stroke="#b91c1c" stroke-width="1.8"/>
+        <line x1="-3" y1="-2" x2="3" y2="-2" stroke="#b91c1c" stroke-width="1.6"/>
+        <line x1="-3" y1="3" x2="3" y2="3" stroke="#b91c1c" stroke-width="1.6"/>
       </g>
     `;
   }
@@ -2665,14 +2212,6 @@ function renderArticulatedActor(charKey, side, mood = 'neutral', isEntering = fa
           </g>
         </g>
       </g>
-
-      <!-- Etiqueta de Nombre y Rol -->
-      <g transform="translate(0, 158)">
-        <rect x="-56" y="-11" width="112" height="22" rx="11" fill="white" stroke="${char.color}" stroke-width="1.6"/>
-        <text x="0" y="3.5" text-anchor="middle" fill="#1e293b" font-size="10.5" font-weight="700" font-family="Inter, Arial">
-          ${esc(displayName)} · <tspan fill="${char.color}" font-weight="600">${esc(char.role)}</tspan>
-        </text>
-      </g>
     </g>
   `;
 }
@@ -2682,7 +2221,7 @@ function renderStageCenterProp(stageType, mood, actNumber = 1, isEnding = false)
   const bg = mood === 'success' ? '#dcfce7' : mood === 'risk' ? '#fee2e2' : mood === 'warn' ? '#fef3c7' : '#e0e7ff';
   const statusText = isEnding
     ? (mood === 'success' ? 'CASO RESUELTO' : mood === 'risk' ? 'CRISIS ACTIVA' : 'ACUERDO PARCIAL')
-    : (voiceMuted ? '⚡ ¡DECIDE!' : `ACTO 0${actNumber}`);
+    : (voiceMuted ? '¡DECIDE!' : `ACTO 0${actNumber}`);
 
   return `
     <g transform="translate(290, 58)">
@@ -2747,14 +2286,9 @@ function getActDialogueLines(challenge, actIdx, prevChoice, endingKey) {
 }
 
 function markSceneReadyToDecide() {
-  const decideEl = document.getElementById('SimDecideBadge');
-  if (decideEl) {
-    decideEl.className = 'decide-now-badge ready';
-    decideEl.textContent = '⚡ ¡DECIDE!';
-  }
   const stageTxt = document.getElementById('SimStageStatusText');
   if (stageTxt && !stageTxt.dataset.isEnding) {
-    stageTxt.textContent = '⚡ ¡DECIDE!';
+    stageTxt.textContent = '¡DECIDE!';
   }
   const grid = document.getElementById('SimChoicesGrid');
   if (grid) grid.classList.add('choices-ready');
@@ -3116,10 +2650,10 @@ function openSkillModal(challengeId, actIdx = 0, prevChoice = 'default', endingK
       </div>
       <div style="display:flex; align-items:center; gap:6px;">
         <button type="button" class="btn outline" data-action="replay-scene:${challenge.id}:${actIdx}:${prevChoice}:${endingKey || ''}" style="padding:4px 10px; font-size:11px;">
-          🔊 Repetir voz
+          Repetir voz
         </button>
         <button type="button" class="btn outline" data-action="toggle-voice:${challenge.id}:${actIdx}:${prevChoice}:${endingKey || ''}" style="padding:4px 10px; font-size:11px;">
-          ${voiceMuted ? '🔇 Voz: OFF' : '🎙️ Voz: ON'}
+          ${voiceMuted ? 'Voz: OFF' : 'Voz: ON'}
         </button>
       </div>
     </div>
@@ -3157,37 +2691,34 @@ function openSkillModal(challengeId, actIdx = 0, prevChoice = 'default', endingK
 
     ${!endingObj ? `
       <div style="text-align:center;">
-        <span id="SimDecideBadge" class="decide-now-badge ${voiceMuted ? 'ready' : ''}">
-          ${voiceMuted ? '⚡ ¡DECIDE!' : '🎙️ Escuchando diálogo...'}
-        </span>
         <strong style="font-size:12.5px; color:#202a3d; display:block; margin-bottom:6px;">
           ${esc(currentAct.prompt)}
         </strong>
         <div id="SimChoicesGrid" class="quick-choices-grid ${voiceMuted ? 'choices-ready' : ''}">
           ${currentAct.choices.map(c => `
             <button type="button" class="quick-choice-btn" data-action="skill-act-choice:${challenge.id}:${actIdx}:${c.id}:${c.ending || ''}">
-              ${esc(c.label || c.shortLabel || '')}
+              ${esc(stripEmoji(c.label || c.shortLabel || ''))}
             </button>
           `).join('')}
         </div>
       </div>
     ` : `
       <div style="background: ${endingObj.mood === 'success' ? '#eef8f0' : endingObj.mood === 'warn' ? '#fef9e7' : '#fdf2f1'}; border: 1px solid ${endingObj.mood === 'success' ? '#a8dab5' : endingObj.mood === 'warn' ? '#f3d98b' : '#f5c2be'}; border-radius: 11px; padding: 9px 13px; margin-bottom: 10px; text-align: center;">
-        <strong style="font-size: 12.5px; color: #202a3d;">${esc(endingObj.badge)}</strong>
+        <strong style="font-size: 12.5px; color: #202a3d;">${esc(stripEmoji(endingObj.badge))}</strong>
       </div>
 
       <div class="ending-feedback-grid">
         <div style="background: #eef8f0; border: 1px solid #b7e1c1; border-radius: 10px; padding: 9px 12px; font-size: 11.5px; color: #1f5432;">
-          <strong>✅ Punto a favor:</strong> ${esc(endingObj.good)}
+          <strong>Punto a favor:</strong> ${esc(endingObj.good)}
         </div>
         <div style="background: #fdf2f1; border: 1px solid #f5c2be; border-radius: 10px; padding: 9px 12px; font-size: 11.5px; color: #8c2f28;">
-          <strong>⚠️ Consecuencia:</strong> ${esc(endingObj.bad)}
+          <strong>Consecuencia:</strong> ${esc(endingObj.bad)}
         </div>
       </div>
 
       <div class="ending-actions-row">
         <button type="button" class="btn outline" data-action="skill-retry:${challenge.id}" style="flex: 1; margin: 0; padding: 10px;">
-          🔄 Explorar otro camino (4 finales)
+          Explorar otro camino
         </button>
         ${endingObj.mood === 'success' ? `
           <button type="button" class="btn primary" data-action="skill-complete:${challenge.id}" style="flex: 1; margin: 0; padding: 10px; background:#2e7d47;">
@@ -3207,8 +2738,7 @@ function viewSoftSkills() {
   <div class="sim-container">
      <div style="background: white; border: 1px solid var(--line); border-radius: 16px; padding: 20px 26px; margin-bottom: 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;">
         <div>
-          <h3 style="margin: 0 0 4px 0; font-size: 20px; color: #202a3d;">🎭 Habilidades Blandas en 3 Actos</h3>
-          <p style="margin: 0; font-size: 12.5px; color: #727b8d;">Nuevos personajes entran en escena según tus decisiones y desbloquean hasta 4 finales por historia.</p>
+          <h3 style="margin: 0; font-size: 20px; color: #202a3d;">Habilidades Blandas en 3 Actos</h3>
         </div>
         <div style="text-align: right;">
           <strong style="font-size: 28px; color: var(--blue); line-height: 1;">${completedCount} <span style="font-size: 16px; color: #8a93a8;">/ ${SOFT_SKILLS_CHALLENGES.length}</span></strong>
@@ -3219,25 +2749,18 @@ function viewSoftSkills() {
      <div class="grid-3">
         ${SOFT_SKILLS_CHALLENGES.map((reto, i) => {
           const done = !!state.completedSkills?.[reto.id];
-          const castNames = (reto.cast || []).map(k => STICK_CHARACTERS[k]?.name).filter(Boolean).join(', ');
           return `
           <div data-action="open-skill:${reto.id}" style="background: white; border: 1px solid ${done ? '#a8dab5' : 'var(--line)'}; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
              <div style="position: relative; height: 148px; background: #0f172a; overflow: hidden;">
                <img src="${esc(reto.image)}" alt="${esc(reto.title)}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; display: block;">
-               <span style="position: absolute; top: 10px; left: 10px; background: rgba(15, 23, 42, 0.78); color: white; font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 7px;">
-                 🎬 3 Actos · 4 Finales
-               </span>
                <span style="position: absolute; top: 10px; right: 10px; background: ${done ? '#eef8f0' : 'rgba(255,255,255,0.92)'}; color: ${done ? '#2e7d47' : '#202a3d'}; font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 7px;">
-                 ${done ? '✅ Superado' : `Reto 0${i + 1}`}
+                 ${done ? 'Superado' : `Reto 0${i + 1}`}
                </span>
              </div>
 
              <div style="padding: 18px 20px 20px; display: flex; flex-direction: column; flex: 1;">
                <h4 style="font-size: 16.5px; margin: 0 0 6px; color: #202a3d;">${esc(reto.title)}</h4>
-               <p style="font-size: 12.5px; line-height: 1.5; color: #727b8d; flex: 1; margin: 0 0 10px 0;">${esc(reto.shortDesc)}</p>
-               <p style="font-size: 11px; color: #475569; margin: 0 0 14px 0;">
-                 <strong>👥 Reparto:</strong> ${esc(castNames)} y tú
-               </p>
+               <p style="font-size: 12.5px; line-height: 1.5; color: #727b8d; flex: 1; margin: 0 0 14px 0;">${esc(reto.shortDesc)}</p>
                <button type="button" class="btn ${done ? 'outline' : 'primary'} full" style="margin-top: 0; pointer-events: none;">
                  ${done ? 'Repetir historia' : 'Entrar a escena'} ${icon('arrow')}
                </button>
@@ -3265,7 +2788,7 @@ function viewProjects() {
   <div class="sim-container">
      <div style="background: white; border: 1px solid var(--line); border-radius: 16px; padding: 20px 26px; margin-bottom: 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;">
        <div>
-         <h3 style="margin: 0 0 4px 0; font-size: 20px; color: #202a3d;">🚀 Proyectos Colaborativos</h3>
+         <h3 style="margin: 0 0 4px 0; font-size: 20px; color: #202a3d;">Proyectos Colaborativos</h3>
          <p style="margin: 0; font-size: 12.5px; color: #727b8d;">Únete a un equipo, marca los 4 entregables y desbloquea tu insignia oficial.</p>
        </div>
        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
@@ -3273,7 +2796,7 @@ function viewProjects() {
            const unlocked = earnedBadges.includes(p.badge.id);
            return `
              <div style="display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 10px; border: 1px solid ${unlocked ? p.badge.color : '#e2e7f1'}; background: ${unlocked ? p.badge.bg : '#f8f9fc'};">
-               <span style="font-size: 12px;">${unlocked ? '🏆' : '🔒'}</span>
+               <span style="font-size: 12px;">${unlocked ? '' : ''}</span>
                <strong style="font-size: 11px; color: ${unlocked ? p.badge.color : '#727b8d'};">${esc(p.badge.title)}</strong>
              </div>
            `;
@@ -3560,46 +3083,21 @@ document.addEventListener('click', e => {
   if (action === 'close') {
     stopAllVoices();
     $('#modal').close();
-  } else if (action === 'auth-tab') {
-    authTab = arg1;
-    registerStep = 1;
+  } else if (action === 'login-back') {
+    loginStep = 1;
     renderLogin();
-  } else if (action === 'pick-career') {
-    registerDraft.career = arg1;
-    registerStep = 2;
-    playSound('tick');
-    renderLogin();
-  } else if (action === 'quiz-step') {
-    registerDraft.quizAnswers[arg1] = arg2;
-    registerStep = Math.min(5, registerStep + 1);
-    playSound('tick');
-    renderLogin();
-  } else if (action === 'wiz-back') {
-    registerStep = Math.max(1, registerStep - 1);
-    renderLogin();
-  } else if (action === 'finish-onboarding') {
-    const aiProfile = buildAiProfile(registerDraft.quizAnswers);
-    const mode = registerDraft.mode || 'register';
-    state.name = registerDraft.name;
-    state.university = mode === 'guest' ? 'Invitado' : (registerDraft.university || 'ESPOL');
-    state.career = registerDraft.career || 'Ingeniería Mecatrónica';
-    state.isGuest = mode === 'guest';
-    state.aiProfile = aiProfile;
+  } else if (action === 'select-career') {
+    loginDraft.career = arg1;
+    state.name = loginDraft.name;
+    state.university = loginDraft.university;
+    state.career = loginDraft.career;
+    state.isGuest = false;
+    state.aiProfile = null;
     saveLocal();
-    fetch('/api/store', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: mode === 'guest' ? 'guest' : 'register',
-        name: state.name,
-        university: state.university,
-        career: state.career,
-        password: registerDraft.password || 'i3labDT',
-        aiProfile
-      })
-    }).catch(() => {});
+    syncWithServer();
     playSound('step');
     toast(`Bienvenido, ${state.name}.`);
+    location.hash = 'home';
     navigate();
   } else if (action === 'quick-user') {
     const acc = serverAccounts.find(a => a.name === arg1);
@@ -3622,15 +3120,6 @@ document.addEventListener('click', e => {
     if (sc) {
       demoChat.push(structuredClone(sc));
       playSound('step');
-      shell();
-    }
-  } else if (action === 'verify-amber') {
-    const idx = Number(arg1);
-    if (demoChat[idx]) {
-      demoChat[idx].color = 'green';
-      demoChat[idx].statusLabel = `VERDE · Fuente contrastada por ${state.name}.`;
-      playSound('tick');
-      toast('Semáforo actualizado a Verde.');
       shell();
     }
   } else if (action === 'clear-chat') {
@@ -3730,6 +3219,7 @@ document.addEventListener('click', e => {
     state.isGuest = false;
     saveLocal();
     $('#modal').close();
+    loginStep = 1;
     navigate();
   } else if (action === 'edit-profile') {
     openModal(`
@@ -3756,56 +3246,15 @@ document.addEventListener('submit', async e => {
   e.preventDefault();
   const data = new FormData(form);
 
-  if (form.id === 'login-form') {
+  if (form.id === 'login-step1-form') {
     const name = String(data.get('name') || '').trim();
-    const password = String(data.get('password') || '');
-    const errEl = document.getElementById('login-error');
-    try {
-      const res = await fetch('/api/store', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'login', name, password })
-      });
-      const body = await res.json();
-      if (!res.ok) {
-        if (errEl) {
-          errEl.textContent = body.error || 'Contraseña incorrecta.';
-          errEl.style.display = 'block';
-        }
-        return;
-      }
-      if (body.user) {
-        state = { ...state, ...body.user, name: '' };
-        registerDraft.career = body.user.career || registerDraft.career;
-        registerDraft.university = body.user.university || 'ESPOL';
-      }
-      if (body.teamsByProject) teamsByProject = body.teamsByProject;
-      playSound('step');
-      startOnboardingWizard('login', name, password);
-    } catch {
-      if (password !== 'i3labDT') {
-        if (errEl) {
-          errEl.textContent = 'Contraseña incorrecta.';
-          errEl.style.display = 'block';
-        }
-        return;
-      }
-      playSound('step');
-      startOnboardingWizard('login', name, password);
-    }
-  }
-
-  if (form.id === 'guest-form') {
-    const name = String(data.get('name') || 'Invitado').trim() || 'Invitado';
+    const university = String(data.get('university') || 'ESPOL');
+    if (!name) return;
+    loginDraft.name = name;
+    loginDraft.university = university;
+    loginStep = 2;
     playSound('step');
-    startOnboardingWizard('guest', name, '');
-  }
-
-  if (form.id === 'register-step1-form') {
-    const name = String(data.get('name') || '').trim();
-    const password = String(data.get('password') || '').trim();
-    playSound('step');
-    startOnboardingWizard('register', name, password);
+    renderLogin();
   }
 
   if (form.id === 'create-team-form') {

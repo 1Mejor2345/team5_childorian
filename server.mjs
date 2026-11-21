@@ -14,6 +14,7 @@ const assets = new Map([
   ['/img/Espol.png', '../img/Espol.png'],
   ['/img/UMayor.png', '../img/UMayor.png'],
   ['/img/I3Lab.png', '../img/I3Lab.png'],
+  ['/img/DSchool.png', '../img/DSchool.png'],
   ['/img/mentor-1.jpg', '../img/mentor-1.jpg'],
   ['/img/mentor-2.jpg', '../img/mentor-2.jpg'],
   ['/img/mentor-3.jpg', '../img/mentor-3.jpg'],
