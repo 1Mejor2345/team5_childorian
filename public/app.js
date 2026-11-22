@@ -1145,7 +1145,7 @@ function renderTopNav() {
     </a>
 
     <nav class="nav-tabs" aria-label="Secciones principales">
-      <button class="tab-btn ${page === 'mentor' ? 'active' : ''}" onclick="location.hash='mentor'">Mentor Sync</button>
+      <button class="tab-btn ${page === 'mentor' || page === 'mentor-chat' ? 'active' : ''}" onclick="location.hash='mentor'">Mentor Sync</button>
       <button class="tab-btn ${page === 'skills' ? 'active' : ''}" onclick="location.hash='skills'">Habilidades Blandas</button>
       <button class="tab-btn ${page === 'projects' ? 'active' : ''}" onclick="location.hash='projects'">Proyectos</button>
     </nav>
@@ -1174,7 +1174,7 @@ function shell() {
          ${views[page]()}
       </main>
     `;
-    if (page === 'mentor') scrollChat();
+    if (page === 'mentor-chat') scrollChat();
   }
 }
 
@@ -1728,6 +1728,107 @@ function home() {
 }
 
 // 8. VISTA 1: MENTOR SYNC (CITA SUBRAYADA LIMPIA SIN REPETICIÓN + IMAGEN FULL HD CON FUENTE)
+function viewMentorHub() {
+  const emptyCards = Array.from({ length: 8 }, () => `<div class="micro-card"></div>`).join('');
+
+  return `
+  <style>
+    .mentor-hub-layout {
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 72px);
+      width: 100%;
+    }
+    .mentor-hub-top {
+      flex: 8 1 80%;
+      padding: 36px 5% 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .mentor-hub-title {
+      font-size: 24px;
+      color: #202a3d;
+      margin: 0 0 24px 0;
+      text-align: center;
+    }
+    .micro-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .micro-card {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      min-height: 150px;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03);
+    }
+    .mentor-hub-bottom {
+      flex: 2 1 20%;
+      min-height: 120px;
+      background: #ffffff;
+      border-top: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 5%;
+    }
+    .mentor-access-btn {
+      background: var(--blue);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 15px 34px;
+      font-size: 14px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      box-shadow: 0 8px 22px rgba(54, 92, 245, 0.24);
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+    .mentor-access-btn:hover {
+      background: #2d50df;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(54, 92, 245, 0.32);
+    }
+    @media (max-width: 900px) {
+      .micro-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 520px) {
+      .micro-grid {
+        grid-template-columns: 1fr;
+      }
+      .micro-card {
+        min-height: 110px;
+      }
+    }
+  </style>
+
+  <div class="mentor-hub-layout">
+    <section class="mentor-hub-top">
+      <h2 class="mentor-hub-title">Micro-Especializaciones</h2>
+      <div class="micro-grid">
+        ${emptyCards}
+      </div>
+    </section>
+
+    <section class="mentor-hub-bottom">
+      <button type="button" class="mentor-access-btn" onclick="location.hash='mentor-chat'">
+        Acceder a Mentor Sync ${icon('arrow')}
+      </button>
+    </section>
+  </div>
+  `;
+}
+
 function viewMentorSync() {
   const lastMsg = demoChat.length > 0 ? demoChat[demoChat.length - 1] : null;
   const activeColor = lastMsg ? lastMsg.color : 'none';
@@ -2004,6 +2105,7 @@ function viewMentorSync() {
   </div>
   `;
 }
+
 
 // 9. VISTA 2: HABILIDADES BLANDAS — 3 ACTOS, ENTRADA/SALIDA DE PERSONAJES, IMÁGENES FULL HD Y 4 FINALES
 function renderCharacterHairAndHat(char) {
@@ -3053,7 +3155,7 @@ function showBadgeCelebration(projectId) {
 }
 
 // 12. ENRUTADOR PRINCIPAL
-const views = { home, mentor: viewMentorSync, skills: viewSoftSkills, projects: viewProjects };
+const views = { home, mentor: viewMentorHub, 'mentor-chat': viewMentorSync, skills: viewSoftSkills, projects: viewProjects };
 
 function navigate() {
   stopAllVoices();
