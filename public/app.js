@@ -3305,3 +3305,5 @@ if (new URLSearchParams(location.search).get('mobile') === '1') {
   navigate();
   fetchInitialServerStore();
 }
+
+// Hola aquí estuvo Mirka Valentina 
