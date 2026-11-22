@@ -1660,7 +1660,7 @@ function home() {
        <div class="feature-card">
          <div class="feature-icon-wrapper icon-blue">${icon('spark')}</div>
          <h3 style="font-size: 18px; color: #202a3d; margin-bottom: 8px;">Mentor Sync</h3>
-         <p style="font-size: 13px; color: #535e74; line-height: 1.55; margin: 0;">IA que te ayuda a dominar conceptos con un semáforo que mide la profundidad de cada respuesta.</p>
+         <p style="font-size: 13px; color: #535e74; line-height: 1.55; margin: 0;">IA que te ayuda como guía en proyectos personales o académicos con un semáforo que mide la profundidad de cada respuesta.</p>
          <div class="traffic-lights">
            <span class="t-light t-red"></span><span class="t-light t-yellow"></span><span class="t-light t-green"></span>
            <span style="margin-left: 4px;">Superficial · Intermedio · Completo</span>
