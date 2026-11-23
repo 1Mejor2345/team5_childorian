@@ -2,7 +2,7 @@ const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const stripEmoji = (s) => String(s ?? '').replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F]/gu, '').replace(/\s{2,}/g, ' ').trim();
 const KEY = 'nexo-prototype-v1';
-const TEAMS_KEY = 'nexo-teams-v1';
+const TEAMS_KEY = 'nexo-teams-v2';
 
 // 1. DATOS DE DOMINIO: CARRERAS, TEST IA CONCISO, MENTOR CON FUENTES, STICKMANS Y PROYECTOS
 const CAREERS = [
@@ -540,68 +540,174 @@ const SOFT_SKILLS_CHALLENGES = [
   }
 ];
 
+const SPECIALTIES = ['Computación', 'Mecatrónica', 'Industrial', 'Administración', 'Diseño'];
+
+const CAREER_TO_SPEC = {
+  'Ingeniería en Computación / Software': 'Computación',
+  'Ingeniería Mecatrónica': 'Mecatrónica',
+  'Ingeniería Industrial / Mecánica': 'Industrial',
+  'Negocios y Administración': 'Administración',
+  'Diseño y Comunicación': 'Diseño'
+};
+
+function getUserSpecialty() {
+  return CAREER_TO_SPEC[state.career] || 'Computación';
+}
+
+function getProjectStatus(p) {
+  const now = new Date();
+  const start = new Date(`${p.startDate}T00:00:00`);
+  const end = new Date(`${p.endDate}T23:59:59`);
+  if (now < start) return 'Inscripciones';
+  if (now > end) return 'Terminados';
+  return 'En proceso';
+}
+
+function getTeamSlotStatus(project, team) {
+  const members = team.members || [];
+  const counts = {};
+  Object.keys(project.requiredSlots).forEach(spec => { counts[spec] = 0; });
+  let freeUsed = 0;
+
+  members.forEach(m => {
+    const spec = m.spec || 'Otra';
+    if (project.requiredSlots[spec] && counts[spec] < project.requiredSlots[spec]) {
+      counts[spec] += 1;
+    } else {
+      freeUsed += 1;
+    }
+  });
+
+  const maxFree = Math.max(0, (team.maxMembers || 4) - 4);
+  const freeLeft = Math.max(0, maxFree - freeUsed);
+  const remainingBySpec = {};
+  Object.keys(project.requiredSlots).forEach(spec => {
+    remainingBySpec[spec] = Math.max(0, project.requiredSlots[spec] - counts[spec]);
+  });
+
+  return {
+    total: members.length,
+    maxMembers: team.maxMembers || 4,
+    isFull: members.length >= (team.maxMembers || 4),
+    remainingBySpec,
+    freeLeft
+  };
+}
+
 const PROJECTS_DATA = [
   {
     id: 1,
-    title: 'Optimización Energética en Planta',
-    desc: 'Monitoreo IoT para reducir picos de consumo eléctrico en líneas de producción.',
+    title: 'Rediseño de empaques sostenibles y cadena de distribución',
+    company: 'Nestlé Ecuador',
+    problemDesc: 'Reducir el uso de plástico de un solo uso en empaques de snacks sin elevar el costo de transporte ni afectar la conservación.',
     image: '/img/proj-1.jpg',
-    mentor: 'Ing. Carlos Mendoza',
-    weeks: '8 semanas',
-    tags: ['⚡ Mecatrónica', '💻 Software'],
-    badge: {
-      id: 'badge-iot',
-      title: 'Arquitecto IoT Industrial',
-      color: '#365cf5',
-      bg: '#eef2ff'
-    },
-    activities: [
-      'Medir consumo base (kWh) en motores principales',
-      'Conectar sensores de corriente y pasarela MQTT',
-      'Calibrar alertas de picos de potencia con el mentor',
-      'Validar reducción del 18 % en horas pico'
+    startDate: '2026-11-28',
+    endDate: '2027-02-02',
+    dateLabel: '28 de noviembre de 2026 - 2 de febrero de 2027',
+    maxTeams: 4,
+    specialties: ['Diseño', 'Industrial', 'Administración'],
+    requiredSlots: { 'Diseño': 2, 'Industrial': 1, 'Administración': 1 },
+    badge: { id: 'badge-nestle', title: 'Innovación en Empaques Sostenibles', color: '#365cf5', bg: '#eef2ff' },
+    microSpecs: [
+      { career: 'Diseño', title: 'Ecodiseño y Packaging Sostenible' },
+      { career: 'Diseño', title: 'Prototipado de Empaques Funcionales' },
+      { career: 'Industrial', title: 'Logística Inversa y Cadena de Suministro' },
+      { career: 'Administración', title: 'Análisis de Costos de Producción' }
     ]
   },
   {
     id: 2,
-    title: 'Inventario con Visión Artificial',
-    desc: 'Conteo automático de stock en almacenes mediante cámaras y redes neuronales.',
+    title: 'Seguridad en redes comunitarias y monitoreo de fallas',
+    company: 'CNT',
+    problemDesc: 'Detectar caídas de conectividad y accesos no autorizados en puntos de internet público rural de forma temprana.',
     image: '/img/proj-2.jpg',
-    mentor: 'Dra. Elena Ruiz',
-    weeks: '10 semanas',
-    tags: ['🤖 Visión IA', '📦 Logística'],
-    badge: {
-      id: 'badge-vision',
-      title: 'Especialista en Visión IA',
-      color: '#0d7a5f',
-      bg: '#e8f7f2'
-    },
-    activities: [
-      'Ajustar ángulos de cámara e iluminación en pasillos',
-      'Etiquetar lote de cajas y códigos en estantería',
-      'Validar margen de error menor al 2 % frente a conteo manual',
-      'Activar panel de alertas de stock en tiempo real'
+    startDate: '2026-12-05',
+    endDate: '2027-02-15',
+    dateLabel: '5 de diciembre de 2026 - 15 de febrero de 2027',
+    maxTeams: 5,
+    specialties: ['Computación', 'Mecatrónica'],
+    requiredSlots: { 'Computación': 2, 'Mecatrónica': 2 },
+    badge: { id: 'badge-cnt', title: 'Especialista en Redes Seguras', color: '#0284c7', bg: '#e0f2fe' },
+    microSpecs: [
+      { career: 'Computación', title: 'Ciberseguridad en Redes' },
+      { career: 'Computación', title: 'Monitoreo de Infraestructura' },
+      { career: 'Mecatrónica', title: 'Sensores y Telemetría de Red' }
     ]
   },
   {
     id: 3,
-    title: 'Interfaz Segura para Maquinaria',
-    desc: 'Panel web de alto contraste para operadores de planta, reduciendo errores de mando.',
+    title: 'Experiencia de compra ágil y gestión de inventario en tienda',
+    company: 'Corporación Favorita',
+    problemDesc: 'Disminuir los tiempos de espera en caja y evitar quiebres de stock en productos de alta rotación mediante alertas rápidas.',
     image: '/img/proj-3.jpg',
-    mentor: 'Dis. Martín Torres',
-    weeks: '9 semanas',
-    tags: ['🎨 UX/UI', '⚙️ Ingeniería'],
-    badge: {
-      id: 'badge-hmi',
-      title: 'Diseñador de Sistemas HMI',
-      color: '#c26a1b',
-      bg: '#fdf2e9'
+    startDate: '2026-11-01',
+    endDate: '2027-01-20',
+    dateLabel: '1 de noviembre de 2026 - 20 de enero de 2027',
+    maxTeams: 4,
+    specialties: ['Administración', 'Computación', 'Diseño'],
+    requiredSlots: { 'Administración': 1, 'Computación': 2, 'Diseño': 1 },
+    badge: { id: 'badge-favorita', title: 'Gestión Retail Inteligente', color: '#059669', bg: '#d1fae5' },
+    microSpecs: [
+      { career: 'Administración', title: 'Gestión de Inventarios Retail' },
+      { career: 'Computación', title: 'Integración de Sistemas de Punto de Venta' },
+      { career: 'Diseño', title: 'Experiencia de Usuario en Tienda' }
+    ]
+  },
+  {
+    id: 4,
+    title: 'Optimización de consumo energético y control en planta',
+    company: 'Cervecería Nacional',
+    problemDesc: 'Identificar picos de consumo eléctrico en líneas de embotellado para proponer un plan de ahorro energético medible.',
+    image: '/img/proj-1.jpg',
+    startDate: '2026-11-05',
+    endDate: '2027-01-25',
+    dateLabel: '5 de noviembre de 2026 - 25 de enero de 2027',
+    maxTeams: 4,
+    specialties: ['Mecatrónica', 'Industrial'],
+    requiredSlots: { 'Mecatrónica': 2, 'Industrial': 2 },
+    badge: { id: 'badge-cn', title: 'Eficiencia Energética Industrial', color: '#b91c1c', bg: '#fee2e2' },
+    defaultTeam: {
+      id: 't4-1',
+      name: 'Equipo Energía+',
+      mentor: 'Ing. Luis Paredes',
+      members: [
+        'Gabriel C. (Mecatrónica)',
+        'Paula D. (Industrial)',
+        'Mateo R. (Industrial)'
+      ]
     },
     activities: [
-      'Mapear jerarquía de alarmas y parada de emergencia',
-      'Diseñar controles de alto contraste para uso con guantes',
-      'Probar reducción del 40 % en tiempo de reacción',
-      'Documentar estándar de interfaz aprobado por el mentor'
+      'Levantar línea base de consumo eléctrico en la línea 2 de embotellado',
+      'Identificar horarios de mayor pico energético junto al mentor',
+      'Diseñar propuesta de redistribución de carga y mantenimiento preventivo',
+      'Presentar estimación de ahorro mensual ante el equipo de planta'
+    ],
+    microSpecs: [
+      { career: 'Mecatrónica', title: 'Automatización y Control de Motores' },
+      { career: 'Industrial', title: 'Eficiencia Energética en Procesos' },
+      { career: 'Industrial', title: 'Seguridad Industrial en Planta' }
+    ]
+  },
+  {
+    id: 5,
+    title: 'Rediseño de educación financiera digital para jóvenes',
+    company: 'Banco Pichincha',
+    problemDesc: 'Crear una experiencia clara y accesible que ayude a universitarios a organizar su presupuesto y fomentar el ahorro mensual.',
+    image: '/img/proj-2.jpg',
+    startDate: '2026-08-10',
+    endDate: '2026-10-30',
+    dateLabel: '10 de agosto de 2026 - 30 de octubre de 2026',
+    maxTeams: 4,
+    specialties: ['Diseño', 'Computación', 'Administración'],
+    requiredSlots: { 'Diseño': 2, 'Computación': 1, 'Administración': 1 },
+    badge: { id: 'badge-pichincha', title: 'Innovación Financiera Digital', color: '#7c3aed', bg: '#f3e8ff' },
+    winnerTeam: 'Equipo Finanzas Claras',
+    prize: '$150 en fondo de incentivo para el equipo',
+    timeline: [
+      { date: '18 de agosto de 2026', title: 'Diagnóstico y entrevistas', desc: 'El equipo encuestó a 40 estudiantes para identificar sus principales dificultades al ahorrar.' },
+      { date: '12 de septiembre de 2026', title: 'Prototipo interactivo', desc: 'Diseñaron un simulador de metas de ahorro validado semanalmente con su mentor.' },
+      { date: '5 de octubre de 2026', title: 'Pruebas con usuarios reales', desc: 'Redujeron los pasos de registro a la mitad tras pruebas de usabilidad en campus.' },
+      { date: '30 de octubre de 2026', title: 'Presentación final y premiación', desc: 'Seleccionados como el mejor proyecto por directivos de Banco Pichincha.' }
     ]
   }
 ];
@@ -609,17 +715,55 @@ const PROJECTS_DATA = [
 function defaultTeamsByProject() {
   return {
     1: [
-      { id: 't1-1', name: 'Equipo Alpha 1', spots: 2, members: ['Camila R.', 'Mateo V.'] },
-      { id: 't1-2', name: 'Equipo Alpha 2', spots: 1, members: ['Diego S.', 'Valeria M.', 'Lucas P.'] }
+      {
+        id: 't1-1',
+        name: 'Equipo EcoPack',
+        mentor: 'Ing. Carlos Mendoza',
+        maxMembers: 6,
+        members: [
+          { name: 'Camila R.', spec: 'Diseño' },
+          { name: 'Mateo V.', spec: 'Industrial' },
+          { name: 'Sofía M.', spec: 'Administración' }
+        ]
+      }
     ],
     2: [
-      { id: 't2-1', name: 'Equipo Vision 1', spots: 2, members: ['Sofía L.', 'Andrés K.'] }
+      {
+        id: 't2-1',
+        name: 'Equipo RedSegura',
+        mentor: 'Ing. Roberto Salazar',
+        maxMembers: 4,
+        members: [
+          { name: 'Andrés K.', spec: 'Computación' },
+          { name: 'Valeria P.', spec: 'Mecatrónica' }
+        ]
+      }
     ],
     3: [
-      { id: 't3-1', name: 'Equipo HMI 1', spots: 2, members: ['Fernanda T.', 'Nicolás B.'] },
-      { id: 't3-2', name: 'Equipo HMI 2', spots: 3, members: ['Gabriel C.'] },
-      { id: 't3-3', name: 'Equipo HMI 3', spots: 1, members: ['Paula D.', 'Sebastián R.', 'Elena G.'] }
-    ]
+      {
+        id: 't3-1',
+        name: 'Equipo Retail Ágil',
+        mentor: 'Mgs. Andrea Viteri',
+        maxMembers: 5,
+        members: [
+          { name: 'Diego S.', spec: 'Computación' },
+          { name: 'Fernanda T.', spec: 'Diseño' }
+        ]
+      }
+    ],
+    4: [
+      {
+        id: 't4-1',
+        name: 'Equipo Energía+',
+        mentor: 'Ing. Luis Paredes',
+        maxMembers: 4,
+        members: [
+          { name: 'Gabriel C.', spec: 'Mecatrónica' },
+          { name: 'Paula D.', spec: 'Industrial' }
+        ]
+      }
+    ],
+    5: []
   };
 }
 
@@ -732,6 +876,8 @@ let loginDraft = {
   career: CAREERS[0]
 };
 let demoChat = [];
+let projectFilter = 'Todas';
+let projectStatusFilter = 'Todos';
 
 // 3. MOTOR DE AUDIO Y VOCES SIN CORTES PREMATUROS
 let audioCtx = null;
@@ -975,7 +1121,13 @@ function scrollChat() {
 
 function openModal(content, wide = false) {
   const el = $('#modal');
-  el.style.width = wide ? 'min(760px, calc(100% - 24px))' : 'min(560px, calc(100% - 30px))';
+  if (wide === 'xl') {
+    el.style.width = 'min(1040px, calc(100% - 24px))';
+  } else if (wide) {
+    el.style.width = 'min(760px, calc(100% - 24px))';
+  } else {
+    el.style.width = 'min(560px, calc(100% - 30px))';
+  }
   el.innerHTML = `<button class="modal-close" data-action="close" aria-label="Cerrar ventana">${icon('close')}</button>${content}`;
   if (!el.open) el.showModal();
 }
@@ -2878,75 +3030,245 @@ function viewSoftSkills() {
 // 10. VISTA 3: PROYECTOS REALES CON IMÁGENES FULL HD E INSIGNIAS
 function getProjectUserState(projectId) {
   if (!state.projectState) state.projectState = {};
+  const proj = PROJECTS_DATA.find(x => x.id === projectId);
   if (!state.projectState[projectId]) {
     state.projectState[projectId] = { teamId: null, teamName: '', checks: [false, false, false, false], completed: false };
+  }
+  if (proj?.defaultTeam && !state.projectState[projectId].teamName) {
+    state.projectState[projectId].teamId = proj.defaultTeam.id;
+    state.projectState[projectId].teamName = proj.defaultTeam.name;
+    state.projectState[projectId].mentor = proj.defaultTeam.mentor;
+    if (!state.projectState[projectId].checks?.some(Boolean)) {
+      state.projectState[projectId].checks = [true, false, false, false];
+    }
   }
   return state.projectState[projectId];
 }
 
 function viewProjects() {
-  const earnedBadges = state.badges || [];
+  const filtered = PROJECTS_DATA.filter(p => {
+    const matchSpec = projectFilter === 'Todas' || p.specialties.includes(projectFilter);
+    const matchStatus = projectStatusFilter === 'Todos' || getProjectStatus(p) === projectStatusFilter;
+    return matchSpec && matchStatus;
+  });
+
   return `
-  <div class="sim-container">
-     <div style="background: white; border: 1px solid var(--line); border-radius: 16px; padding: 20px 26px; margin-bottom: 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;">
-       <div>
-         <h3 style="margin: 0 0 4px 0; font-size: 20px; color: #202a3d;">Proyectos Colaborativos</h3>
-         <p style="margin: 0; font-size: 12.5px; color: #727b8d;">Únete a un equipo, marca los 4 entregables y desbloquea tu insignia oficial.</p>
-       </div>
-       <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-         ${PROJECTS_DATA.map(p => {
-           const unlocked = earnedBadges.includes(p.badge.id);
-           return `
-             <div style="display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 10px; border: 1px solid ${unlocked ? p.badge.color : '#e2e7f1'}; background: ${unlocked ? p.badge.bg : '#f8f9fc'};">
-               <span style="font-size: 12px;">${unlocked ? '' : ''}</span>
-               <strong style="font-size: 11px; color: ${unlocked ? p.badge.color : '#727b8d'};">${esc(p.badge.title)}</strong>
-             </div>
-           `;
-         }).join('')}
-       </div>
-     </div>
+  <style>
+    .projects-page-wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 32px clamp(16px, 4vw, 40px) 56px;
+    }
+    .projects-header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .projects-header h2 {
+      font-size: 26px;
+      color: #202a3d;
+      margin: 0 0 6px 0;
+    }
+    .projects-header p {
+      font-size: 13.5px;
+      color: #535e74;
+      margin: 0;
+    }
+    .rules-cta-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .rules-trigger-btn {
+      background: #202a3d;
+      border: 1px solid #202a3d;
+      color: #ffffff;
+      border-radius: 10px;
+      padding: 9px 20px;
+      font-size: 12.5px;
+      font-weight: 650;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(32, 42, 61, 0.14);
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+    .rules-trigger-btn:hover {
+      background: #334155;
+      transform: translateY(-1px);
+    }
+    .filters-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 26px;
+    }
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+    .filter-pill {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 7px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #535e74;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .filter-pill:hover {
+      border-color: #b8c8ff;
+      color: var(--blue);
+    }
+    .filter-pill.active {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #ffffff;
+    }
+    .status-pill {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 11.5px;
+      font-weight: 650;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .status-pill:hover {
+      border-color: #cbd5e1;
+      color: #202a3d;
+    }
+    .status-pill.active {
+      background: #eef2ff;
+      border-color: var(--blue);
+      color: var(--blue);
+    }
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 22px;
+      justify-content: center;
+    }
+    .proj-card {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .proj-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+    }
+    .proj-img-wrap {
+      height: 152px;
+      background: #0f172a;
+      overflow: hidden;
+    }
+    .proj-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .proj-body {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .proj-title {
+      font-size: 15.5px;
+      color: #202a3d;
+      margin: 0 0 4px 0;
+      line-height: 1.35;
+    }
+    .proj-company {
+      font-size: 12.5px;
+      font-weight: 650;
+      color: var(--blue);
+      margin: 0 0 8px 0;
+    }
+    .proj-problem {
+      font-size: 12px;
+      line-height: 1.5;
+      color: #64748b;
+      margin: 0 0 12px 0;
+    }
+    .proj-specs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 16px;
+      flex: 1;
+      align-content: flex-start;
+    }
+    .proj-spec-tag {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #475569;
+      background: #f1f5f9;
+      padding: 4px 9px;
+      border-radius: 7px;
+    }
+  </style>
 
-     <div class="grid-3">
-        ${PROJECTS_DATA.map(p => {
-          const pState = getProjectUserState(p.id);
-          const hasTeam = !!pState.teamName;
-          const doneCount = (pState.checks || []).filter(Boolean).length;
-          const isCompleted = !!pState.completed;
-          const teams = teamsByProject[p.id] || [];
+  <div class="projects-page-wrap">
+    <div class="projects-header">
+      <h2>Proyectos Colaborativos</h2>
+      <p>Ayuda a empresas reales con soluciones creativas e innovadoras</p>
+    </div>
 
-          let btnLabel = 'Ver equipos';
-          if (hasTeam && !isCompleted) btnLabel = `Ver actividades (${doneCount}/4)`;
-          if (isCompleted) btnLabel = '🏆 Completado · Ver insignia';
+    <div class="rules-cta-wrap">
+      <button type="button" class="rules-trigger-btn" data-action="open-project-rules">
+        Ver indicaciones de participación
+      </button>
+    </div>
 
-          return `
-          <div style="background: white; border: 1px solid ${isCompleted ? '#a8dab5' : hasTeam ? '#b8c8ff' : 'var(--line)'}; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;">
-             <div style="position: relative; height: 156px; background: #0f172a; overflow: hidden;">
-               <img src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; display: block;">
-               <div style="position: absolute; top: 10px; left: 10px; display: flex; gap: 6px;">
-                 ${p.tags.map(t => `<span style="font-size: 9.5px; background: rgba(15, 23, 42, 0.8); color: #ffffff; padding: 3px 8px; border-radius: 6px; font-weight: 600;">${esc(t)}</span>`).join('')}
-               </div>
-               <span style="position: absolute; top: 10px; right: 10px; font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 7px; background: ${isCompleted ? '#eef8f0' : 'rgba(255,255,255,0.92)'}; color: ${isCompleted ? '#2e7d47' : hasTeam ? 'var(--blue)' : '#475569'};">
-                 ${isCompleted ? '✅ Terminado' : hasTeam ? esc(pState.teamName) : `${teams.length} equipos`}
-               </span>
-             </div>
+    <div class="filters-stack">
+      <div class="filter-bar" role="group" aria-label="Filtrar por especialidad">
+        ${['Todas', ...SPECIALTIES].map(spec => `
+          <button type="button" class="filter-pill ${projectFilter === spec ? 'active' : ''}" data-action="filter-projects:${esc(spec)}">
+            ${esc(spec)}
+          </button>
+        `).join('')}
+      </div>
 
-             <div style="padding: 18px 20px 20px; display: flex; flex-direction: column; flex: 1;">
-               <h4 style="font-size: 16.5px; margin: 0 0 8px 0; color: #202a3d; line-height: 1.3;">${esc(p.title)}</h4>
-               <p style="font-size: 12.5px; line-height: 1.5; color: #727b8d; flex: 1; margin: 0;">${esc(p.desc)}</p>
+      <div class="filter-bar" role="group" aria-label="Filtrar por estado">
+        ${['Todos', 'Inscripciones', 'En proceso', 'Terminados'].map(st => `
+          <button type="button" class="status-pill ${projectStatusFilter === st ? 'active' : ''}" data-action="filter-project-status:${esc(st)}">
+            ${esc(st)}
+          </button>
+        `).join('')}
+      </div>
+    </div>
 
-               <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line);">
-                  <p style="font-size: 11px; margin: 0 0 12px 0; color: #535e74;">
-                    <strong>${esc(p.mentor)}</strong> · ${esc(p.weeks)}
-                  </p>
-                  <button type="button" class="btn ${hasTeam ? 'outline' : 'primary'} full" data-action="project-details:${p.id}" style="margin-top: 0; ${hasTeam ? 'border-color:var(--blue); color:var(--blue);' : ''}">
-                    ${esc(btnLabel)}
-                  </button>
-               </div>
-             </div>
+    <div class="projects-grid">
+      ${filtered.map(p => `
+        <article class="proj-card">
+          <div class="proj-img-wrap">
+            <img src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy">
           </div>
-          `;
-        }).join('')}
-     </div>
+          <div class="proj-body">
+            <h3 class="proj-title">${esc(p.title)}</h3>
+            <p class="proj-company">${esc(p.company)}</p>
+            <p class="proj-problem">${esc(p.problemDesc)}</p>
+            <div class="proj-specs">
+              ${p.specialties.map(s => `<span class="proj-spec-tag">${esc(s)}</span>`).join('')}
+            </div>
+            <button type="button" class="btn primary full" data-action="project-details:${p.id}" style="margin-top: 0;">
+              Mostrar detalles
+            </button>
+          </div>
+        </article>
+      `).join('')}
+    </div>
   </div>
   `;
 }
@@ -2984,129 +3306,343 @@ function profile() {
   `);
 }
 
-function showProjectDetails(projectId, forceTeamSelection = false) {
+function showProjectRules() {
+  openModal(`
+    <span class="eyebrow" style="color: var(--blue); margin-bottom: 4px;">INDICACIONES</span>
+    <h2 id="modal-title" style="font-size: 20px; margin: 0 0 14px 0;">Reglas de participación</h2>
+    <div style="display: grid; gap: 12px; margin-bottom: 18px;">
+      <div style="display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; font-size: 13px; line-height: 1.5; color: #3c4963; padding-bottom: 12px; border-bottom: 1px solid var(--line);">
+        <span style="width: 26px; height: 26px; border-radius: 50%; background: #eef2ff; color: var(--blue); font-size: 11.5px; font-weight: 700; display: flex; align-items: center; justify-content: center;">1</span>
+        <span>Una vez estés dentro de un proyecto debes comprometerte a completarlo; caso contrario perderás el acceso a esta plataforma durante 1 año.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; font-size: 13px; line-height: 1.5; color: #3c4963; padding-bottom: 12px; border-bottom: 1px solid var(--line);">
+        <span style="width: 26px; height: 26px; border-radius: 50%; background: #eef2ff; color: var(--blue); font-size: 11.5px; font-weight: 700; display: flex; align-items: center; justify-content: center;">2</span>
+        <span>Por cada proyecto terminado ganas una insignia digital que sirve como prueba de experiencia laboral.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; font-size: 13px; line-height: 1.5; color: #3c4963;">
+        <span style="width: 26px; height: 26px; border-radius: 50%; background: #eef2ff; color: var(--blue); font-size: 11.5px; font-weight: 700; display: flex; align-items: center; justify-content: center;">3</span>
+        <span>El mejor grupo de cada proyecto recibe un premio por parte de la empresa aliada.</span>
+      </div>
+    </div>
+    <button type="button" class="btn primary full" data-action="close" style="margin: 0;">Entendido</button>
+  `);
+}
+
+function showProjectDetails(projectId) {
   const p = PROJECTS_DATA.find(x => x.id === projectId);
   if (!p) return;
-  const pState = getProjectUserState(projectId);
+
+  const status = getProjectStatus(p);
+  const userSpec = getUserSpecialty();
   const teams = teamsByProject[projectId] || [];
+  const pState = getProjectUserState(projectId);
+  const [startText, endText] = String(p.dateLabel || '').split(' - ');
 
-  const coverBanner = p.image ? `
-    <div style="height: 135px; border-radius: 12px; overflow: hidden; margin-bottom: 12px; position: relative; background: #0f172a;">
+  const modalStyles = `
+    <style>
+      .proj-modal-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        align-items: start;
+      }
+      .proj-dates-card {
+        margin-top: 14px;
+        background: #f0f4ff;
+        border: 1.5px solid #c7d7fe;
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .proj-date-item span {
+        display: block;
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--blue);
+        margin-bottom: 4px;
+      }
+      .proj-date-item strong {
+        display: block;
+        font-size: 15px;
+        color: #202a3d;
+        line-height: 1.3;
+      }
+      @media (max-width: 760px) {
+        .proj-modal-grid, .proj-dates-card {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  `;
+
+  const coverBanner = `
+    <div style="height: 115px; border-radius: 12px; overflow: hidden; margin-bottom: 16px; background: #0f172a;">
       <img src="${esc(p.image)}" alt="${esc(p.title)}" style="width: 100%; height: 100%; object-fit: cover; display: block;">
-      <span style="position: absolute; bottom: 8px; right: 8px; background: rgba(15,23,42,0.78); color: white; font-size: 9.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
-        📸 Vista de proyecto Full HD
-      </span>
     </div>
-  ` : '';
+  `;
 
-  if (!pState.teamName || forceTeamSelection) {
-    openModal(`
-      <span class="eyebrow" style="color:var(--blue);">EQUIPOS DEL PROYECTO</span>
-      <h2 id="modal-title" style="font-size: 20px; margin: 4px 0 6px;">${esc(p.title)}</h2>
-      <p style="font-size: 12px; color: #697386; margin: 0 0 12px 0;">Mentor: <strong>${esc(p.mentor)}</strong> · Insignia: <strong>🏆 ${esc(p.badge.title)}</strong></p>
-      ${coverBanner}
-
-      <div style="display: grid; gap: 8px; margin-bottom: 16px;">
-        ${teams.map(t => {
-          const isMember = pState.teamId === t.id;
-          const canJoin = t.spots > 0 || isMember;
-          return `
-            <div style="padding: 11px 14px; border: 1px solid ${isMember ? 'var(--blue)' : 'var(--line)'}; border-radius: 10px; background: ${isMember ? '#f0f4ff' : 'white'}; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;">
-              <div>
-                <strong style="font-size: 12.5px; color: #202a3d; display: block;">${esc(t.name)}</strong>
-                <small style="font-size: 11px; color: #727b8d;">${esc((t.members || []).join(', '))}</small>
-              </div>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="background: ${t.spots > 0 ? '#eaf3eb' : '#f1f3f7'}; color: ${t.spots > 0 ? '#52795d' : '#8a93a8'}; font-size: 10px; padding: 3px 8px; border-radius: 8px; font-weight: 600;">
-                  ${t.spots > 0 ? `${t.spots} vacantes` : 'Completo'}
-                </span>
-                ${canJoin ? `
-                  <button type="button" class="btn primary" data-action="join-team:${p.id}:${t.id}" style="padding: 6px 12px; font-size: 11px;">
-                    ${isMember ? 'Ver actividades' : 'Unirme'}
-                  </button>
-                ` : ''}
-              </div>
-            </div>
-          `;
-        }).join('')}
+  const datesCardHtml = `
+    <div class="proj-dates-card">
+      <div class="proj-date-item">
+        <span>Fecha de inicio</span>
+        <strong>${esc(startText || p.startDate)}</strong>
       </div>
-
-      <style>
-        .create-team-grid {
-          display: grid;
-          grid-template-columns: 1fr auto auto;
-          gap: 8px;
-          align-items: center;
-        }
-        @media (max-width: 560px) {
-          .create-team-grid {
-            grid-template-columns: 1fr;
-          }
-          .create-team-grid select,
-          .create-team-grid button {
-            width: 100% !important;
-          }
-        }
-      </style>
-      <div style="background: #f8f9fc; border: 1px solid var(--line); border-radius: 11px; padding: 13px;">
-        <strong style="font-size: 11.5px; color: #202a3d; display: block; margin-bottom: 8px;">✨ O crea tu propio equipo:</strong>
-        <form id="create-team-form" class="create-team-grid" data-project="${p.id}">
-          <input name="teamName" maxlength="32" placeholder="Nombre del equipo" required style="margin:0; padding:9px 11px; background:white;">
-          <select name="spots" style="margin:0; padding:9px; width:auto; min-height:0; background:white;">
-            <option value="2">2 vacantes</option>
-            <option value="3">3 vacantes</option>
-            <option value="4">4 vacantes</option>
-            <option value="1">1 vacante</option>
-          </select>
-          <button type="submit" class="btn outline" style="padding: 9px 12px; border-color: var(--blue); color: var(--blue); white-space: nowrap;">
-            Crear y unirme
-          </button>
-        </form>
-      </div>
-    `, true);
-    return;
-  }
-
-  const checks = pState.checks || [false, false, false, false];
-  const doneCount = checks.filter(Boolean).length;
-  const allChecked = doneCount === p.activities.length;
-
-  openModal(`
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding-right:28px;">
-      <span class="eyebrow" style="margin:0; color:var(--blue);">${esc(pState.teamName.toUpperCase())}</span>
-      <button type="button" class="text-link" data-action="change-team:${p.id}" style="font-size:11px;">Cambiar equipo</button>
-    </div>
-    <h2 id="modal-title" style="font-size: 19px; margin: 6px 0 10px;">${esc(p.title)}</h2>
-    ${coverBanner}
-
-    <div style="background: #f8f9fc; border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px; margin-bottom: 14px;">
-      <div style="display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:6px;">
-        <strong style="color:#202a3d;">Avance de entregables</strong>
-        <span style="color:var(--blue); font-weight:700;">${doneCount} / ${p.activities.length}</span>
-      </div>
-      <div class="bar" style="height: 7px;">
-        <span style="width: ${(doneCount / p.activities.length) * 100}%; background: ${allChecked ? '#2e7d47' : 'var(--blue)'}; transition: width 0.25s ease;"></span>
+      <div class="proj-date-item">
+        <span>Fecha de fin</span>
+        <strong>${esc(endText || p.endDate)}</strong>
       </div>
     </div>
+  `;
 
-    <div style="display: grid; gap: 8px; margin-bottom: 18px;">
-      ${p.activities.map((act, idx) => {
-        const checked = !!checks[idx];
+  const renderMicroSpecs = (isLocked = false) => `
+    <span class="eyebrow" style="margin: 0 0 8px 0; color: var(--blue);">MICRO-ESPECIALIZACIONES DEL PROYECTO</span>
+    <div style="display: grid; gap: 7px;">
+      ${(p.microSpecs || []).map(ms => {
+        const allowed = !isLocked && ms.career === userSpec;
         return `
-          <label data-action="toggle-activity:${p.id}:${idx}" style="margin:0; display:flex; align-items:center; gap:10px; padding:11px 13px; border-radius:10px; border:1.5px solid ${checked ? '#9fc8ac' : '#e2e7f1'}; background:${checked ? '#eef8f0' : 'white'}; cursor:pointer; font-weight:500;">
-            <input type="checkbox" ${checked ? 'checked' : ''} style="width:17px; height:17px; margin:0; accent-color:#2e7d47; pointer-events:none;">
-            <span style="font-size:12px; color:${checked ? '#1f5432' : '#26334d'}; text-decoration:${checked ? 'line-through' : 'none'}; flex:1;">
-              ${esc(act)}
-            </span>
-          </label>
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; border: 1px solid ${allowed ? '#b8c8ff' : '#e2e7f1'}; background: ${allowed ? '#f5f8ff' : '#f8f9fc'};">
+            <div>
+              <strong style="font-size: 12px; color: ${allowed ? '#202a3d' : '#727b8d'}; display: block;">${esc(ms.title)}</strong>
+              <small style="font-size: 10.5px; color: #727b8d;">Dirigido a: ${esc(ms.career)}</small>
+            </div>
+            ${isLocked ? `
+              <span style="font-size: 10px; font-weight: 600; color: #94a3b8; white-space: nowrap;">Disponible al iniciar</span>
+            ` : allowed ? `
+              <button type="button" class="btn primary" data-action="open-micro:${esc(ms.title)}" style="padding: 5px 11px; font-size: 10.5px; flex-shrink: 0;">
+                Acceder
+              </button>
+            ` : `
+              <span style="font-size: 10px; font-weight: 600; color: #94a3b8; white-space: nowrap;">Solo ${esc(ms.career)}</span>
+            `}
+          </div>
         `;
       }).join('')}
     </div>
+  `;
 
-    <button type="button" class="btn primary full" data-action="finish-project:${p.id}" ${allChecked ? '' : 'disabled'} style="margin:0; padding:12px 18px; font-size:12.5px; background:${allChecked ? '#2e7d47' : 'var(--blue)'};">
-      🏆 Proyecto terminado · Obtener insignia ${icon('check')}
-    </button>
-  `, true);
+  // CASO 1: TERMINADO
+  if (status === 'Terminados') {
+    openModal(`
+      ${modalStyles}
+      <span class="eyebrow" style="color: #2e7d47; margin-bottom: 4px;">PROYECTO FINALIZADO · ${esc(p.company.toUpperCase())}</span>
+      <h2 id="modal-title" style="font-size: 20px; margin: 0 0 12px 0;">${esc(p.title)}</h2>
+      ${coverBanner}
+
+      <div class="proj-modal-grid">
+        <div style="display: grid; gap: 12px;">
+          <div style="background: #eef8f0; border: 1.5px solid #a8dab5; border-radius: 12px; padding: 14px 16px;">
+            <span class="eyebrow" style="color: #2e7d47; margin: 0 0 4px 0;">EQUIPO GANADOR</span>
+            <strong style="font-size: 18px; color: #1f5432; display: block;">${esc(p.winnerTeam || 'Equipo Ganador')}</strong>
+          </div>
+
+          <div style="background: #f8f9fc; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;">
+            <span class="eyebrow" style="color: var(--blue); margin: 0 0 4px 0;">PREMIO OTORGADO POR ${esc(p.company.toUpperCase())}</span>
+            <p style="font-size: 13px; color: #202a3d; margin: 0; line-height: 1.5; font-weight: 500;">${esc(p.prize || '')}</p>
+          </div>
+        </div>
+
+        <div>
+          <span class="eyebrow" style="margin: 0 0 10px 0; color: var(--blue);">LÍNEA DE TIEMPO DEL EQUIPO GANADOR</span>
+          <div style="border-left: 2px solid #cbd5e1; margin-left: 8px; padding-left: 16px; display: grid; gap: 12px;">
+            ${(p.timeline || []).map(item => `
+              <div style="position: relative;">
+                <span style="position: absolute; left: -22px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #2e7d47; border: 2px solid #ffffff;"></span>
+                <small style="font-size: 10.5px; font-weight: 700; color: #2e7d47; display: block;">${esc(item.date)}</small>
+                <strong style="font-size: 12.5px; color: #202a3d; display: block;">${esc(item.title)}</strong>
+                <p style="font-size: 11.5px; color: #64748b; margin: 2px 0 0 0; line-height: 1.4;">${esc(item.desc)}</p>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `, 'xl');
+    return;
+  }
+
+  // CASO 2: EN PROCESO
+  if (status === 'En proceso') {
+    const isInGroup = !!pState.teamName;
+
+    // 2A: EN PROCESO Y NO ESTOY EN UN GRUPO
+    if (!isInGroup) {
+      openModal(`
+        ${modalStyles}
+        <span class="eyebrow" style="color: #b45309; margin-bottom: 4px;">EN PROCESO · ${esc(p.company.toUpperCase())}</span>
+        <h2 id="modal-title" style="font-size: 20px; margin: 0 0 12px 0;">${esc(p.title)}</h2>
+        ${coverBanner}
+
+        <div style="background: #f8f9fc; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;">
+          <span class="eyebrow" style="margin: 0 0 6px 0; color: var(--blue);">PROBLEMA PLANTEADO</span>
+          <p style="font-size: 13.5px; color: #202a3d; line-height: 1.6; margin: 0;">${esc(p.problemDesc)}</p>
+        </div>
+
+        ${datesCardHtml}
+      `, true);
+      return;
+    }
+
+    // 2B: EN PROCESO Y SÍ ESTOY EN UN GRUPO
+    // 2B: EN PROCESO Y SÍ ESTOY EN UN GRUPO
+    const checks = pState.checks || [false, false, false, false];
+    const tasks = p.activities || [];
+    const mentorName = pState.mentor || p.defaultTeam?.mentor || 'Ing. Luis Paredes';
+    const baseMembers = p.defaultTeam?.members || ['Gabriel C. (Mecatrónica)', 'Paula D. (Industrial)'];
+    const myEntry = `${state.name || 'Tú'} (${userSpec})`;
+    const allMembers = [...baseMembers, myEntry];
+
+    openModal(`
+      ${modalStyles}
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; padding-right: 28px; margin-bottom: 10px;">
+        <div>
+          <span class="eyebrow" style="color: var(--blue); margin-bottom: 3px;">EN PROCESO · ${esc(p.company.toUpperCase())}</span>
+          <h2 id="modal-title" style="font-size: 20px; margin: 0;">${esc(p.title)}</h2>
+        </div>
+        <span style="font-size: 12px; font-weight: 700; color: var(--blue); background: #eef2ff; padding: 5px 11px; border-radius: 8px;">
+          Tu equipo: ${esc(pState.teamName)}
+        </span>
+      </div>
+
+      ${coverBanner}
+
+      <div class="proj-modal-grid">
+        <div style="display: grid; gap: 14px;">
+          <div style="background: #f8f9fc; border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px;">
+            <span class="eyebrow" style="margin: 0 0 4px 0; color: var(--blue);">PROBLEMÁTICA</span>
+            <p style="font-size: 12.5px; color: #202a3d; line-height: 1.5; margin: 0;">${esc(p.problemDesc)}</p>
+          </div>
+
+          <div style="background: #ffffff; border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px;">
+            <span class="eyebrow" style="margin: 0 0 6px 0; color: var(--blue);">EQUIPO Y MENTOR ENCARGADO</span>
+            <p style="font-size: 12px; color: #202a3d; margin: 0 0 8px 0;">
+              <strong>Mentor encargado:</strong> ${esc(mentorName)}
+            </p>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+              ${allMembers.map(m => `
+                <span style="font-size: 11px; font-weight: 600; color: #3c4963; background: #f1f5f9; padding: 4px 9px; border-radius: 7px;">
+                  ${esc(m)}
+                </span>
+              `).join('')}
+            </div>
+          </div>
+
+          <div>
+            <span class="eyebrow" style="margin: 0 0 8px 0; color: var(--blue);">ACTIVIDADES PLANEADAS (CHECK-IN)</span>
+            <div style="display: grid; gap: 7px;">
+              ${tasks.map((act, idx) => {
+                const checked = !!checks[idx];
+                return `
+                  <label data-action="toggle-activity:${p.id}:${idx}" style="margin:0; display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:10px; border:1.5px solid ${checked ? '#9fc8ac' : '#e2e7f1'}; background:${checked ? '#eef8f0' : 'white'}; cursor:pointer; font-weight:500;">
+                    <input type="checkbox" ${checked ? 'checked' : ''} style="width:16px; height:16px; margin:0; accent-color:#2e7d47; pointer-events:none;">
+                    <span style="font-size:12px; color:${checked ? '#1f5432' : '#26334d'}; text-decoration:${checked ? 'line-through' : 'none'}; flex:1;">
+                      ${esc(act)}
+                    </span>
+                  </label>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          ${renderMicroSpecs(false)}
+          ${datesCardHtml}
+        </div>
+      </div>
+    `, 'xl');
+    return;
+  }
+
+  // CASO 3: INSCRIPCIONES
+  const canCreateTeam = teams.length < p.maxTeams;
+  openModal(`
+    ${modalStyles}
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; padding-right: 28px; margin-bottom: 10px;">
+      <div>
+        <span class="eyebrow" style="color: var(--blue); margin-bottom: 3px;">INSCRIPCIONES ABIERTAS · ${esc(p.company.toUpperCase())}</span>
+        <h2 id="modal-title" style="font-size: 20px; margin: 0;">${esc(p.title)}</h2>
+      </div>
+      <span style="font-size: 12px; font-weight: 700; color: #475569; background: #f1f5f9; padding: 5px 11px; border-radius: 8px;">
+        Equipos: ${teams.length} / ${p.maxTeams}
+      </span>
+    </div>
+
+    ${coverBanner}
+
+    <div class="proj-modal-grid">
+      <div>
+        <span class="eyebrow" style="margin: 0 0 8px 0; color: var(--blue);">EQUIPOS DISPONIBLES</span>
+        <div style="display: grid; gap: 8px; margin-bottom: 14px;">
+          ${teams.map(t => {
+            const slotInfo = getTeamSlotStatus(p, t);
+            const isMember = pState.teamId === t.id;
+            const canJoinSpec = (slotInfo.remainingBySpec[userSpec] || 0) > 0;
+            const canJoinFree = slotInfo.freeLeft > 0;
+            const canJoin = !isMember && !slotInfo.isFull && (canJoinSpec || canJoinFree);
+
+            const missingReq = Object.entries(slotInfo.remainingBySpec)
+              .filter(([, n]) => n > 0)
+              .map(([s, n]) => `${n} ${s}`)
+              .join(', ');
+
+            return `
+              <div style="padding: 10px 13px; border: 1px solid ${isMember ? 'var(--blue)' : 'var(--line)'}; border-radius: 11px; background: ${isMember ? '#f0f4ff' : '#ffffff'}; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                <div style="min-width: 0;">
+                  <strong style="font-size: 13px; color: #202a3d; display: block;">${esc(t.name)} (${slotInfo.total}/${slotInfo.maxMembers})</strong>
+                  <small style="font-size: 11px; color: #535e74; display: block;">Mentor: <strong>${esc(t.mentor || 'Ing. Carlos Mendoza')}</strong></small>
+                  <small style="font-size: 10.5px; color: #727b8d; display: block; margin-top: 2px;">
+                    ${missingReq ? `Faltan: ${esc(missingReq)}` : 'Perfiles base cubiertos'}${slotInfo.freeLeft > 0 ? ` · ${slotInfo.freeLeft} libre(s)` : ''}
+                  </small>
+                </div>
+                <div style="flex-shrink: 0;">
+                  ${isMember ? `
+                    <span style="font-size: 11px; font-weight: 700; color: var(--blue);">Tu equipo</span>
+                  ` : canJoin ? `
+                    <button type="button" class="btn primary" data-action="join-team:${p.id}:${t.id}" style="padding: 6px 12px; font-size: 11px;">
+                      Unirme
+                    </button>
+                  ` : `
+                    <span style="font-size: 10.5px; font-weight: 600; color: #94a3b8;">
+                      ${slotInfo.isFull ? 'Lleno' : 'Sin cupo'}
+                    </span>
+                  `}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        ${canCreateTeam ? `
+          <div style="background: #f8f9fc; border: 1px solid var(--line); border-radius: 11px; padding: 12px;">
+            <strong style="font-size: 11.5px; color: #202a3d; display: block; margin-bottom: 8px;">Crear nuevo equipo</strong>
+            <form id="create-team-form" data-project="${p.id}" style="display: grid; grid-template-columns: 1fr auto; gap: 8px;">
+              <input name="teamName" maxlength="32" placeholder="Nombre del equipo" required style="margin:0; padding:8px 10px; background:white; grid-column: 1 / -1;">
+              <select name="maxMembers" style="margin:0; padding:8px; min-height:0; background:white;">
+                <option value="4">4 integrantes (solo base)</option>
+                <option value="5">5 integrantes (1 libre)</option>
+                <option value="6">6 integrantes (2 libres)</option>
+              </select>
+              <button type="submit" class="btn outline" style="padding: 8px 12px; border-color: var(--blue); color: var(--blue); white-space: nowrap;">
+                Crear equipo
+              </button>
+            </form>
+          </div>
+        ` : `
+          <div style="background: #f8f9fc; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 11.5px; color: #64748b;">
+            Se alcanzó el límite máximo de equipos.
+          </div>
+        `}
+      </div>
+
+      <div>
+        ${renderMicroSpecs(true)}
+        ${datesCardHtml}
+      </div>
+    </div>
+  `, 'xl');
 }
 
 function showBadgeCelebration(projectId) {
@@ -3272,26 +3808,43 @@ document.addEventListener('click', e => {
     showProjectDetails(Number(arg1), false);
   } else if (action === 'change-team') {
     showProjectDetails(Number(arg1), true);
+  } else if (action === 'filter-projects') {
+    projectFilter = arg1 || 'Todas';
+    shell();
+  } else if (action === 'filter-project-status') {
+    projectStatusFilter = arg1 || 'Todos';
+    shell();
+  } else if (action === 'open-project-rules') {
+    showProjectRules();
+  
+  } else if (action === 'open-micro') {
+    toast(`Abriendo micro-especialización: ${arg1}`);
   } else if (action === 'join-team') {
     const pid = Number(arg1);
     const tid = arg2;
+    const proj = PROJECTS_DATA.find(x => x.id === pid);
     const list = teamsByProject[pid] || [];
     const team = list.find(t => t.id === tid);
-    if (team) {
+    if (proj && team) {
+      const slotInfo = getTeamSlotStatus(proj, team);
+      const userSpec = getUserSpecialty();
+      const canJoin = !slotInfo.isFull && ((slotInfo.remainingBySpec[userSpec] || 0) > 0 || slotInfo.freeLeft > 0);
+      if (!canJoin) {
+        toast('No hay cupos disponibles para tu carrera en este equipo.');
+        return;
+      }
       const pState = getProjectUserState(pid);
       if (pState.teamId !== team.id) {
-        if (team.spots > 0) team.spots -= 1;
-        if (!team.members.includes(state.name)) team.members.push(state.name);
+        team.members.push({ name: state.name, spec: userSpec });
         pState.teamId = team.id;
         pState.teamName = team.name;
       }
       syncWithServer();
       playSound('step');
-      toast(`Unido a ${team.name}.`);
-      if (page === 'projects') shell();
-      showProjectDetails(pid, false);
+      toast(`Te uniste a ${team.name}.`);
+      showProjectDetails(pid);
     }
-  } else if (action === 'toggle-activity') {
+  }  else if (action === 'toggle-activity') {
     const pid = Number(arg1);
     const idx = Number(arg2);
     const pState = getProjectUserState(pid);
@@ -3361,25 +3914,45 @@ document.addEventListener('submit', async e => {
 
   if (form.id === 'create-team-form') {
     const pid = Number(form.dataset.project);
+    const proj = PROJECTS_DATA.find(x => x.id === pid);
     const teamName = String(data.get('teamName') || '').trim();
-    const spots = Number(data.get('spots') || 2);
-    if (!teamName) return;
+    const maxMembers = Number(data.get('maxMembers') || 4);
+    if (!proj || !teamName) return;
+
+    const hasStarted = new Date() >= new Date(`${proj.startDate}T00:00:00`);
+    if (hasStarted) {
+      toast('No se pueden crear equipos porque el proyecto ya inició.');
+      return;
+    }
     if (!teamsByProject[pid]) teamsByProject[pid] = [];
+    if (teamsByProject[pid].length >= proj.maxTeams) {
+      toast('Ya se alcanzó el límite máximo de equipos para este proyecto.');
+      return;
+    }
+    if (maxMembers < 4 || maxMembers > 6) {
+      toast('El tamaño del equipo debe ser mínimo de 4 y máximo de 6 integrantes.');
+      return;
+    }
+
+    const userSpec = getUserSpecialty();
+    const mentors = ['Ing. Carlos Mendoza', 'Dra. Elena Ruiz', 'Mgs. Andrea Viteri', 'Ing. Roberto Salazar'];
+    const assignedMentor = mentors[teamsByProject[pid].length % mentors.length];
     const newTeam = {
       id: `custom-${Date.now()}`,
       name: teamName,
-      spots,
-      members: [state.name]
+      mentor: assignedMentor,
+      maxMembers,
+      members: [{ name: state.name, spec: userSpec }]
     };
+
     teamsByProject[pid].push(newTeam);
     const pState = getProjectUserState(pid);
     pState.teamId = newTeam.id;
     pState.teamName = newTeam.name;
     syncWithServer();
     playSound('step');
-    toast(`Equipo «${teamName}» creado.`);
-    if (page === 'projects') shell();
-    showProjectDetails(pid, false);
+    toast(`Equipo "${teamName}" creado con mentor asignado.`);
+    showProjectDetails(pid);
   }
 
   if (form.id === 'profile-form') {
